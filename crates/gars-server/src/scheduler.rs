@@ -3,9 +3,9 @@
 //! is written to `~/.gars/schedules/done/{YYYY-MM-DD_HHMM}_{id}.md` so users
 //! can audit runs without scraping logs.
 //!
-//! This module is intentionally simple: state lives in two files per task
-//! (`<id>.toml` for config + `<id>.state.json` for cooldown / last_run) and
-//! the runner re-scans the directory each tick. No database.
+//! v0.0.3: no "mode" concept. The runner just executes the prompt through
+//! `run_task`. If the prompt needs SOP guidance the LLM fetches it itself
+//! via `skill_show`.
 
 use std::{
     fs,
@@ -15,13 +15,12 @@ use std::{
     time::Duration,
 };
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result};
 use chrono::{DateTime, Local};
 use cron::Schedule;
 use gars_core::{TaskRunOpts, run_task};
 use gars_llm::build_client;
 use gars_memory::GarsPaths;
-use gars_skills::{load_mode, mode_hint};
 use serde::{Deserialize, Serialize};
 
 use crate::AppState;
@@ -34,10 +33,6 @@ pub struct ScheduledTask {
     pub cron: String,
     pub prompt: String,
     #[serde(default)]
-    pub cooldown_secs: u64,
-    #[serde(default = "default_max_delay")]
-    pub max_delay_hours: u64,
-    #[serde(default)]
     pub llm: Option<String>,
     #[serde(default)]
     pub description: Option<String>,
@@ -45,9 +40,6 @@ pub struct ScheduledTask {
 
 fn default_enabled() -> bool {
     true
-}
-fn default_max_delay() -> u64 {
-    24
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -78,8 +70,7 @@ pub fn done_dir(paths: &GarsPaths) -> PathBuf {
 }
 
 pub fn list_tasks(paths: &GarsPaths) -> Vec<ScheduledTask> {
-    let dir = schedules_dir(paths);
-    let Ok(rd) = fs::read_dir(&dir) else {
+    let Ok(rd) = fs::read_dir(schedules_dir(paths)) else {
         return Vec::new();
     };
     let mut out = Vec::new();
@@ -118,24 +109,23 @@ pub fn save_task(paths: &GarsPaths, task: &ScheduledTask) -> Result<PathBuf> {
 }
 
 pub fn delete_task(paths: &GarsPaths, id: &str) -> Result<()> {
-    let toml = schedules_dir(paths).join(format!("{id}.toml"));
-    let state = schedules_dir(paths).join(format!("{id}.state.json"));
-    let _ = fs::remove_file(&toml);
-    let _ = fs::remove_file(&state);
+    let _ = fs::remove_file(schedules_dir(paths).join(format!("{id}.toml")));
+    let _ = fs::remove_file(schedules_dir(paths).join(format!("{id}.state.json")));
     Ok(())
 }
 
 pub fn load_state(paths: &GarsPaths, id: &str) -> ScheduledState {
-    let path = schedules_dir(paths).join(format!("{id}.state.json"));
-    fs::read_to_string(&path)
+    fs::read_to_string(schedules_dir(paths).join(format!("{id}.state.json")))
         .ok()
         .and_then(|s| serde_json::from_str(&s).ok())
         .unwrap_or_default()
 }
 
 pub fn save_state(paths: &GarsPaths, id: &str, state: &ScheduledState) -> Result<()> {
-    let path = schedules_dir(paths).join(format!("{id}.state.json"));
-    fs::write(&path, serde_json::to_string_pretty(state)?)?;
+    fs::write(
+        schedules_dir(paths).join(format!("{id}.state.json")),
+        serde_json::to_string_pretty(state)?,
+    )?;
     Ok(())
 }
 
@@ -165,7 +155,6 @@ pub fn health(task: &ScheduledTask, state: &ScheduledState) -> ScheduleHealth {
 
 pub fn spawn_scheduler(state: Arc<AppState>) {
     tokio::spawn(async move {
-        // Light startup delay so the service is ready before the first tick.
         tokio::time::sleep(Duration::from_secs(30)).await;
         loop {
             if let Err(err) = tick(&state).await {
@@ -196,23 +185,8 @@ async fn tick(state: &AppState) -> Result<()> {
             .as_deref()
             .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
             .map(|dt| dt.with_timezone(&Local));
-        let cooldown_ok = match last_run {
-            Some(lr) => (now - lr).num_seconds() >= task.cooldown_secs as i64,
-            None => true,
-        };
-        if !cooldown_ok {
-            continue;
-        }
-        // We "are due" when there is a firing at or before now since the last
-        // run, and that firing isn't stale beyond max_delay_hours.
         let anchor = last_run.unwrap_or_else(|| now - chrono::Duration::seconds(60));
-        let due = match schedule.after(&anchor).next() {
-            Some(fire) if fire <= now => {
-                let stale = (now - fire).num_hours() > task.max_delay_hours as i64;
-                !stale
-            }
-            _ => false,
-        };
+        let due = matches!(schedule.after(&anchor).next(), Some(fire) if fire <= now);
         if !due {
             continue;
         }
@@ -234,26 +208,10 @@ pub async fn run_task_now(
         .or(cfg.default_llm.as_deref())
         .unwrap_or("primary");
     let client = build_client(&cfg.llm, selected).context("build llm client")?;
-    // v0.7: inject a hint listing the scheduled-task SOP key rather than the
-    // body. The LLM can fetch via `skill_show("scheduled_task_sop")` when
-    // needed.
-    let mode_def = load_mode(&state.paths, "schedule").unwrap_or_else(|| gars_skills::ModeDef {
-        key: "schedule".into(),
-        label: "Scheduled".into(),
-        description: String::new(),
-        runner_kind: "schedule".into(),
-        sop_keys: vec!["scheduled_task_sop".into()],
-        allowed_tools: None,
-        budget_secs: None,
-        max_turns: None,
-        source: "synthetic".into(),
-    });
-    let hint = mode_hint(&state.paths, &mode_def);
-    let sop_contents = if hint.is_empty() { vec![] } else { vec![hint] };
     let opts = TaskRunOpts {
         prompt: task.prompt.clone(),
         system_prompt_base: crate::build_system_prompt(&state.paths, &cfg)?,
-        sop_contents,
+        sop_contents: vec![],
         allowed_tools: None,
         max_turns: 70,
         context_char_budget: cfg.context_char_budget.unwrap_or(180_000),
@@ -327,9 +285,4 @@ fn sanitize(id: &str) -> String {
             }
         })
         .collect()
-}
-
-#[allow(dead_code)]
-fn _unused_anyhow() -> anyhow::Error {
-    anyhow!("unused")
 }

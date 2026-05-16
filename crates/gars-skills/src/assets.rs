@@ -25,6 +25,9 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::{agents_dir, skills_dir};
+// v0.0.3: the "mode" concept was removed; modes/ is no longer shipped or
+// refreshed. SOPs (skills/) and agent definitions (agents/) are the only
+// embedded asset categories.
 
 const MANIFEST_VERSION: u32 = 1;
 const GARS_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -74,33 +77,6 @@ const SOPS: &[(&str, &str)] = &[
     ),
 ];
 
-const MODES: &[(&str, &str)] = &[
-    (
-        "chat.toml",
-        include_str!("../assets/modes/builtin/chat.toml"),
-    ),
-    (
-        "schedule.toml",
-        include_str!("../assets/modes/builtin/schedule.toml"),
-    ),
-    (
-        "trigger.toml",
-        include_str!("../assets/modes/builtin/trigger.toml"),
-    ),
-    (
-        "subagent.toml",
-        include_str!("../assets/modes/builtin/subagent.toml"),
-    ),
-    (
-        "plan.toml",
-        include_str!("../assets/modes/builtin/plan.toml"),
-    ),
-    (
-        "goal.toml",
-        include_str!("../assets/modes/builtin/goal.toml"),
-    ),
-];
-
 const AGENTS: &[(&str, &str)] = &[
     (
         "verifier.toml",
@@ -124,10 +100,6 @@ pub fn embedded_agents() -> &'static [(&'static str, &'static str)] {
     AGENTS
 }
 
-pub fn embedded_modes() -> &'static [(&'static str, &'static str)] {
-    MODES
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Manifest {
     pub manifest_version: u32,
@@ -140,7 +112,6 @@ pub struct Manifest {
 pub struct InitSummary {
     pub builtin_skills: Vec<PathBuf>,
     pub builtin_agents: Vec<PathBuf>,
-    pub builtin_modes: Vec<PathBuf>,
     pub migrated_to_builtin: Vec<PathBuf>,
     pub migrated_to_local: Vec<PathBuf>,
 }
@@ -150,17 +121,12 @@ pub fn init_user_skills(paths: &GarsPaths) -> Result<InitSummary> {
 
     let skills_root = skills_dir(paths);
     let agents_root = agents_dir(paths);
-    let modes_root = crate::modes_dir(paths);
 
-    // Ensure subdirs exist
     for sub in ["builtin", "local", "imported"] {
         fs::create_dir_all(skills_root.join(sub))?;
     }
     for sub in ["builtin", "local"] {
         fs::create_dir_all(agents_root.join(sub))?;
-    }
-    for sub in ["builtin", "local"] {
-        fs::create_dir_all(modes_root.join(sub))?;
     }
 
     let mut summary = InitSummary::default();
@@ -190,17 +156,6 @@ pub fn init_user_skills(paths: &GarsPaths) -> Result<InitSummary> {
     write_manifest(
         &agents_root.join("builtin").join(".manifest.json"),
         agent_manifest,
-    )?;
-
-    let mode_manifest = refresh_builtin(&modes_root.join("builtin"), MODES)?;
-    for (name, _) in MODES {
-        summary
-            .builtin_modes
-            .push(modes_root.join("builtin").join(name));
-    }
-    write_manifest(
-        &modes_root.join("builtin").join(".manifest.json"),
-        mode_manifest,
     )?;
 
     Ok(summary)

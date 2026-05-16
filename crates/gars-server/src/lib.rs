@@ -28,7 +28,7 @@ use futures_util::{Stream, StreamExt};
 use gars_archive::{ArchiveConfig, run_idle_pass};
 use gars_connectors::{ConnectorContext, ConnectorRegistry, InboundEvent, WebhookRequest};
 use gars_core::{
-    AgentRuntime, PlanFile, RuntimeEvent, RuntimeOptions, StepStatus, SubagentHandle, ToolContext,
+    AgentRuntime, PlanFile, RuntimeEvent, RuntimeOptions, SubagentHandle, ToolContext,
     ToolRegistry, allocate_workdir, load_run, scan_runs, write_input,
 };
 use gars_extension::{ExtensionHello, ExtensionRegistry};
@@ -52,7 +52,6 @@ use tower_http::{
     trace::TraceLayer,
 };
 
-pub mod goal_mode;
 pub mod scheduler;
 pub mod subagent_runner;
 
@@ -400,8 +399,6 @@ fn router(state: Arc<AppState>) -> Router {
         .route("/skills/market/install", post(market_install))
         .route("/skills/market/{id}", get(market_detail))
         .route("/skills/{key}", get(get_skill))
-        .route("/modes", get(list_modes).post(create_mode))
-        .route("/modes/{key}", get(get_mode).delete(delete_mode))
         .route("/agents", get(list_agents))
         .route("/connectors", get(list_connectors))
         .route("/connectors/{id}/reload", post(reload_connector))
@@ -423,9 +420,6 @@ fn router(state: Arc<AppState>) -> Router {
         .route("/schedules/{id}", get(get_schedule).delete(delete_schedule))
         .route("/schedules/{id}/trigger", post(trigger_schedule))
         .route("/schedules/{id}/health", get(schedule_health))
-        .route("/goals", get(list_goals).post(create_goal))
-        .route("/goals/{id}", get(get_goal))
-        .route("/goals/{id}/stop", post(stop_goal))
         .route("/extension", get(extension_ws))
         .route("/extension/state", get(extension_state))
         .route("/events", get(events_ws));
@@ -1148,59 +1142,6 @@ async fn list_agents(
     Ok(Json(json!({"agents": registry.list()})))
 }
 
-async fn list_modes(
-    State(state): State<Arc<AppState>>,
-    headers: HeaderMap,
-) -> ApiResult<Json<Value>> {
-    authorize(&state, &headers)?;
-    let modes = gars_skills::load_all_modes(&state.paths);
-    Ok(Json(json!({"modes": modes})))
-}
-
-async fn get_mode(
-    State(state): State<Arc<AppState>>,
-    headers: HeaderMap,
-    AxumPath(key): AxumPath<String>,
-) -> ApiResult<Json<Value>> {
-    authorize(&state, &headers)?;
-    let mode = gars_skills::load_mode(&state.paths, &key)
-        .ok_or_else(|| ApiError::not_found("mode not found"))?;
-    Ok(Json(serde_json::to_value(&mode).unwrap_or_default()))
-}
-
-async fn create_mode(
-    State(state): State<Arc<AppState>>,
-    headers: HeaderMap,
-    Json(payload): Json<gars_skills::ModeDef>,
-) -> ApiResult<Json<Value>> {
-    authorize(&state, &headers)?;
-    let path = gars_skills::save_local_mode(&state.paths, &payload)
-        .map_err(|e| ApiError::bad_request(format!("save mode: {e}")))?;
-    Ok(Json(json!({
-        "status": "ok",
-        "path": path.to_string_lossy(),
-    })))
-}
-
-async fn delete_mode(
-    State(state): State<Arc<AppState>>,
-    headers: HeaderMap,
-    AxumPath(key): AxumPath<String>,
-) -> ApiResult<Json<Value>> {
-    authorize(&state, &headers)?;
-    // Builtins are protected: refuse deletion of a key whose source is builtin.
-    if let Some(m) = gars_skills::load_mode(&state.paths, &key)
-        && m.source == "builtin"
-    {
-        return Err(ApiError::bad_request(format!(
-            "mode '{key}' is builtin; only local/imported modes can be deleted"
-        )));
-    }
-    gars_skills::delete_local_mode(&state.paths, &key)
-        .map_err(|e| ApiError::bad_request(format!("delete mode: {e}")))?;
-    Ok(Json(json!({"status": "ok"})))
-}
-
 async fn list_connectors(
     State(state): State<Arc<AppState>>,
     headers: HeaderMap,
@@ -1517,9 +1458,7 @@ async fn mark_plan_step(
     authorize(&state, &headers)?;
     let plan_path = plans_dir(&state.paths).join(&id).join("plan.md");
     let mut plan = PlanFile::load(&plan_path)?;
-    let status = StepStatus::parse(&payload.status)
-        .ok_or_else(|| ApiError::bad_request(format!("unknown status '{}'", payload.status)))?;
-    plan.mark(idx, status, payload.note)?;
+    plan.mark(idx, &payload.status, payload.note)?;
     Ok(Json(json!({"status": "ok", "plan": plan})))
 }
 
@@ -1745,49 +1684,6 @@ async fn schedule_health(
     let st = scheduler::load_state(&state.paths, &task.id);
     let h = scheduler::health(&task, &st);
     Ok(Json(json!({"health": h})))
-}
-
-// ===== Goals =====
-
-async fn list_goals(
-    State(state): State<Arc<AppState>>,
-    headers: HeaderMap,
-) -> ApiResult<Json<Value>> {
-    authorize(&state, &headers)?;
-    Ok(Json(json!({"goals": goal_mode::list(&state.paths)})))
-}
-
-async fn create_goal(
-    State(state): State<Arc<AppState>>,
-    headers: HeaderMap,
-    Json(body): Json<goal_mode::GoalCreate>,
-) -> ApiResult<Json<Value>> {
-    authorize(&state, &headers)?;
-    let goal = goal_mode::spawn(state, body)
-        .await
-        .map_err(|err| ApiError::internal(err.to_string()))?;
-    Ok(Json(json!({"goal": goal})))
-}
-
-async fn get_goal(
-    State(state): State<Arc<AppState>>,
-    headers: HeaderMap,
-    AxumPath(id): AxumPath<String>,
-) -> ApiResult<Json<Value>> {
-    authorize(&state, &headers)?;
-    let goal =
-        goal_mode::load(&state.paths, &id).ok_or_else(|| ApiError::not_found("goal not found"))?;
-    Ok(Json(json!({"goal": goal})))
-}
-
-async fn stop_goal(
-    State(state): State<Arc<AppState>>,
-    headers: HeaderMap,
-    AxumPath(id): AxumPath<String>,
-) -> ApiResult<Json<Value>> {
-    authorize(&state, &headers)?;
-    goal_mode::stop(&state.paths, &id)?;
-    Ok(Json(json!({"status": "ok"})))
 }
 
 // ===== Extension =====

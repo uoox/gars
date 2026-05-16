@@ -1,6 +1,0 @@
-key = "subagent"
-label = "子代理模式"
-description = "派一个独立子代理跑专门任务，可并行、可中断。文件协议在 ~/.gars/tasks/<run_id>/<agent>/。"
-runner_kind = "subagent"
-sop_keys = ["subagent_sop"]
-max_turns = 20

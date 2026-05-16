@@ -1,5 +1,64 @@
 # Changelog
 
+## v0.0.3 — 2026-05-17
+
+### 还核：删除"任务模式"概念，回归小核心
+
+gars 现在做的事情和上游 GenericAgent 严格对齐：聊天工具链接、Agent loop +
+LLM 调用、少量原子工具、REST API + 解耦前端。"任务模式" 不再是一等公民。
+
+**Removed**
+
+- **`crates/gars-skills/src/modes.rs`** (整文件): `ModeDef`, `load_mode`,
+  `load_all_modes`, `save_local_mode`, `delete_local_mode`, `mode_hint`,
+  `load_sop_bodies`, `resolve_mode`, `modes_dir` — 全删。
+- **`crates/gars-skills/assets/modes/builtin/*.toml`** (6 文件): chat,
+  schedule, trigger, subagent, plan, goal — 不再随二进制 ship。SOP（即
+  markdown）单独表达行为差异；约定靠用户在 `~/.gars/skills/local/` 里写。
+- **`crates/gars-server/src/goal_mode.rs`** (298 行): `GoalState`,
+  consecutive-done detection, wall-clock budget enforcement — 全删。
+  Goal 不再是 mode；想要"带预算的长跑任务"就让 SOP 自己处理时间和早停。
+- **REST 路由**: `GET/POST /v1/modes`, `GET/DELETE /v1/modes/{key}`,
+  `GET/POST /v1/goals`, `GET /v1/goals/{id}`, `POST /v1/goals/{id}/stop`
+  — 删除。`/v1/tasks`, `/v1/chat`, `/v1/schedules`, `/v1/subagents`,
+  `/v1/plans` 保留作为原子接口。
+- **`crates/gars-core/src/plan_mode.rs`** 里的 `StepStatus` 8-状态枚举，
+  以及 `marker()` / `parse()` / `strip_marker()` — 删。Plan 现在把每步
+  状态当作裸字符串 marker（`"[ ]"` / `"[D]"` / `"[FIX]"`）；markdown
+  文件是唯一真相。
+- 前端 `ui.html`：composer 模式下拉、新建任务里的模式选择、Settings 里
+  的「模式管理」子页 — 全删。
+
+**Changed**
+
+- `crates/gars-server/src/scheduler.rs` (-47 行): 不再加载 `mode_hint`；
+  去掉 `cooldown_secs` 和 `max_delay_hours` 这两个字段及其判断。cron + 60s
+  tick + done report 三件事保留。
+- `crates/gars-server/src/subagent_runner.rs` (-41 行): 不再加载
+  `mode_hint`；去掉 `[tool:name]` 行日志和 `---` 轮次 marker（让 SOP 自己
+  决定要不要在 output.txt 里写这些）。
+- `crates/gars-skills/src/assets.rs`: `init_user_skills` 简化，不再刷
+  `modes/builtin/`；`InitSummary.builtin_modes` 字段移除。
+- **新建任务 UI** 简化为「标题（可选） + Prompt」两栏，不选模式不选预算。
+  想要更精细控制的高级用法走 REST 或写 SOP。
+- 设置面板从 8 个子页减到 7 个（删模式管理；通用/LLM/技能/连接器/扩展/
+  归档/关于）。
+
+**Net diff** — roughly:
+
+```
+gars-skills/src/modes.rs                257 → 0     (-257)
+gars-server/src/goal_mode.rs            298 → 0     (-298)
+gars-core/src/plan_mode.rs              316 → 251   (-65)
+gars-server/src/scheduler.rs            335 → 288   (-47)
+gars-server/src/subagent_runner.rs      109 → 68    (-41)
+gars-server/assets/ui.html              1887 → 1606 (-281)
+assets/modes/builtin/*.toml             6 files     deleted
++ small touches in lib.rs, plan_tools.rs, cli garstool.rs, assets.rs
+```
+
+约 −1000 行代码 + 6 个 TOML 文件，朝"小核心"再走一步。
+
 ## v0.0.2 — 2026-05-16
 
 ### Changed

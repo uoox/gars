@@ -1,5 +1,0 @@
-key = "trigger"
-label = "触发任务"
-description = "满足条件时执行动作。本质是一个高频 schedule：先让 LLM 判断 YES/NO，命中后再跑动作。"
-runner_kind = "schedule"
-sop_keys = ["trigger_sop"]

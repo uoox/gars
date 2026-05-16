@@ -1,5 +1,0 @@
-key = "chat"
-label = "普通模式"
-description = "一次或多轮对话，最常见的入口。LLM 自由决定调用哪些工具，无预算限制。"
-runner_kind = "chat"
-sop_keys = []

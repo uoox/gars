@@ -1,9 +1,8 @@
 use std::fs;
-use std::path::PathBuf;
 
 use anyhow::{Result, anyhow};
 use async_trait::async_trait;
-use gars_core::{PlanFile, StepOutcome, StepStatus, Tool, ToolContext, ToolSpec};
+use gars_core::{PlanFile, StepOutcome, Tool, ToolContext, ToolSpec};
 use gars_memory::GarsPaths;
 use gars_skills::plans_dir;
 use serde_json::{Value, json};
@@ -97,17 +96,12 @@ impl Tool for PlanMarkTool {
             .get("idx")
             .and_then(Value::as_u64)
             .ok_or_else(|| anyhow!("idx required"))? as usize;
-        let status_str = arg_str(&args, "status").unwrap_or_else(|| "done".to_string());
-        let status = match status_str.as_str() {
-            "done" => StepStatus::Done,
-            "failed" => StepStatus::Failed,
-            _ => StepStatus::Pending,
-        };
+        let status = arg_str(&args, "status").unwrap_or_else(|| "done".to_string());
         let note = arg_str(&args, "note");
         let paths = GarsPaths::resolve(Some(ctx.gars_home.clone()))?;
         let plan_path = plans_dir(&paths).join(&id).join("plan.md");
         let mut plan = PlanFile::load(&plan_path)?;
-        plan.mark(idx, status, note)?;
+        plan.mark(idx, &status, note)?;
         let (done, failed, total) = plan.status_summary();
         Ok(StepOutcome::next(
             json!({
@@ -165,8 +159,4 @@ impl Tool for PlanStatusTool {
             ctx.anchor_prompt(),
         ))
     }
-}
-
-fn _ignore() -> PathBuf {
-    PathBuf::new()
 }

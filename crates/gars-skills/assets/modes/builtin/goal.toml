@@ -1,6 +1,0 @@
-key = "goal"
-label = "目标模式"
-description = "给一个开放目标 + 时间预算，agent 自驱推进到预算用完。LLM 想提前停的话由外层 driver 再 nudge 回来。"
-runner_kind = "goal"
-sop_keys = ["goal_sop", "autonomous_sop"]
-budget_secs = 600

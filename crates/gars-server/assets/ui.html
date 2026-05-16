@@ -314,11 +314,6 @@ section.chat-pane .chat-stream .welcome p { margin: 6px 0; font-size: 13.5px; }
 .composer .composer-foot .left {
   display: flex; align-items: center; gap: 6px; flex: 1;
 }
-.composer select.mode-sel {
-  background: transparent; border: 0; color: var(--muted);
-  padding: 4px 8px; cursor: pointer; font-size: 12.5px;
-}
-.composer select.mode-sel:hover { color: var(--fg); }
 .composer .hint {
   color: var(--muted); font-size: 11.5px;
 }
@@ -598,10 +593,7 @@ section.chat-pane .chat-stream .welcome p { margin: 6px 0; font-size: 13.5px; }
       <div class="composer-shell">
         <textarea id="composerInput" placeholder="向 gars 提问，Enter 发送 / Shift+Enter 换行"></textarea>
         <div class="composer-foot">
-          <div class="left">
-            <select class="mode-sel" id="composerMode" title="选择运行模式"></select>
-            <span class="hint" id="composerHint"></span>
-          </div>
+          <div class="left"><span class="hint">Enter 发送 · Shift+Enter 换行</span></div>
           <button class="send" id="sendBtn" title="发送 (Enter)">↑</button>
         </div>
       </div>
@@ -639,14 +631,11 @@ const State = {
   currentTaskId: null,
   /* 'chat': transient ad-hoc chat in right pane (no task selected) */
   chatHistory: [],
-  modes: { list: [], loaded: false },
-  composerMode: 'chat',
   ws: null,
   settings: {
     open: false,
     sub: 'general',
     skills: { mode: 'local', items: [], query: '', selectedKey: null, marketSel: null, marketPage: 1, marketSource: '', marketLevel: '' },
-    modesSel: null,
   },
 };
 const TOKEN_KEY = 'gars.adminToken';
@@ -763,21 +752,6 @@ function formatTs(ts) {
 }
 
 // ╔════════════════════════════════════════════╗
-// ║              modes registry                ║
-// ╚════════════════════════════════════════════╝
-async function loadModes(force) {
-  if (State.modes.loaded && !force) return State.modes.list;
-  try {
-    const data = await api('/v1/modes');
-    State.modes.list = data.modes || [];
-  } catch (e) { State.modes.list = []; }
-  State.modes.loaded = true;
-  return State.modes.list;
-}
-function allModes() { return State.modes.list || []; }
-function findMode(key) { return allModes().find(m => m.key === key); }
-
-// ╔════════════════════════════════════════════╗
 // ║              task list (left)              ║
 // ╚════════════════════════════════════════════╝
 async function refreshTasks() {
@@ -803,7 +777,7 @@ function renderTaskList() {
 
   const q = State.taskFilter.trim().toLowerCase();
   const filtered = q
-    ? State.tasks.filter(t => ((t.title || t.prompt || t.id) + ' ' + (t.mode || '')).toLowerCase().includes(q))
+    ? State.tasks.filter(t => (t.title || t.prompt || t.id).toLowerCase().includes(q))
     : State.tasks;
 
   if (!filtered.length) {
@@ -823,7 +797,6 @@ function renderTaskList() {
     },
       el('div', { class: 'ttl' }, t.title || t.prompt || t.id),
       el('div', { class: 'meta' },
-        t.mode ? el('span', { class: 'chip accent' }, t.mode) : null,
         status ? el('span', { class: 'chip ' + chipKind }, status) : null,
         el('span', null, formatTs(t.created_at || t.createdAt)),
       ),
@@ -871,8 +844,8 @@ function renderTransientChat() {
   if (!State.chatHistory.length) {
     stream.appendChild(el('div', { class: 'welcome' },
       el('h3', null, '欢迎使用 gars'),
-      el('p', null, '在下面输入框中提问，或点击左侧「＋ 新建任务」创建定时任务、规划任务等。'),
-      el('p', null, '调整运行模式：在底部下拉里选 chat / plan / goal 等。'),
+      el('p', null, '在下面输入框中提问，或点击左侧「＋ 新建任务」派一段 prompt 到后台跑。'),
+      el('p', null, '任务行为由 SOP（~/.gars/skills/local/）决定，不需要重启 gars 即可热更新。'),
     ));
     return;
   }
@@ -894,16 +867,6 @@ async function sendComposerMessage() {
   const ta = document.getElementById('composerInput');
   const text = ta.value.trim();
   if (!text) return;
-  const mode = State.composerMode || 'chat';
-  const modeDef = findMode(mode);
-
-  // Non-chat modes go through "+ 新建任务" modal pre-filled so users can review parameters
-  if (modeDef && modeDef.runner_kind !== 'chat') {
-    ta.value = '';
-    openNewTaskModal(mode, text);
-    return;
-  }
-
   ta.value = '';
   const stream = document.getElementById('chatStream');
   // Wipe welcome before first message
@@ -919,7 +882,7 @@ async function sendComposerMessage() {
       method: 'POST',
       headers: Object.assign({ 'Content-Type': 'application/json' },
         getToken() ? { 'Authorization': 'Bearer ' + getToken() } : {}),
-      body: JSON.stringify({ message: text, stream: true, mode }),
+      body: JSON.stringify({ message: text, stream: true }),
     });
     if (!resp.ok || !resp.body) {
       const err = await resp.text();
@@ -966,7 +929,6 @@ async function renderTaskDetail(id) {
     const t = await api('/v1/tasks/' + encodeURIComponent(id));
     const meta = el('div', { class: 'kv', style: { 'max-width': '720px', 'margin-bottom': '20px' } },
       el('div', { class: 'k' }, '标题'), el('div', null, t.title || t.prompt || ''),
-      el('div', { class: 'k' }, '模式'), el('div', null, t.mode || '普通'),
       el('div', { class: 'k' }, '状态'), el('div', null, t.status || ''),
       el('div', { class: 'k' }, '创建于'), el('div', null, formatTs(t.created_at)),
     );
@@ -983,115 +945,29 @@ async function renderTaskDetail(id) {
 }
 
 // ╔════════════════════════════════════════════╗
-// ║              composer setup                ║
-// ╚════════════════════════════════════════════╝
-function refreshComposerModes() {
-  const sel = document.getElementById('composerMode');
-  clear(sel);
-  for (const m of allModes()) {
-    sel.appendChild(el('option', { value: m.key, ...(m.key === State.composerMode ? { selected: true } : {}) }, m.label));
-  }
-  refreshComposerHint();
-}
-function refreshComposerHint() {
-  const m = findMode(State.composerMode);
-  const hint = document.getElementById('composerHint');
-  if (!m) { hint.textContent = ''; return; }
-  hint.textContent = m.runner_kind === 'chat'
-    ? ''
-    : '· 此模式发送后会弹窗确认参数';
-}
-
-// ╔════════════════════════════════════════════╗
 // ║              new task modal                ║
 // ╚════════════════════════════════════════════╝
-async function openNewTaskModal(presetMode, presetPrompt) {
-  await loadModes();
+async function openNewTaskModal(presetPrompt) {
   const content = el('div');
   content.appendChild(el('h3', null, '新建任务'));
-  content.appendChild(el('div', { class: 'modal-desc' }, '选择运行模式，填入参数后创建。'));
-  content.appendChild(el('label', null, '模式'));
-  const modeSel = el('select');
-  for (const m of allModes()) {
-    modeSel.appendChild(el('option', { value: m.key, ...(m.key === (presetMode || 'chat') ? { selected: true } : {}) }, m.label));
-  }
-  content.appendChild(modeSel);
-  const hint = el('div', { class: 'hint' });
-  content.appendChild(hint);
-
-  const dyn = el('div');
-  content.appendChild(dyn);
-
-  function refreshMode() {
-    const m = findMode(modeSel.value);
-    hint.textContent = m ? (m.description || '') : '';
-    clear(dyn);
-    if (!m) return;
-    const r = m.runner_kind;
-    if (r === 'chat') {
-      dyn.appendChild(el('label', null, 'Prompt'));
-      const ta = el('textarea', { id: 'np_prompt', rows: '4' });
-      if (presetPrompt) ta.value = presetPrompt;
-      dyn.appendChild(ta);
-    } else if (r === 'schedule') {
-      dyn.appendChild(el('label', null, '标题'));
-      dyn.appendChild(el('input', { id: 'np_title', placeholder: '例：每天早上摘要' }));
-      if (m.key === 'trigger') {
-        dyn.appendChild(el('label', null, '触发条件 (LLM YES/NO prompt)'));
-        const cond = el('textarea', { id: 'np_cond', placeholder: '例：检查 ~/Downloads 是否有新 PDF' });
-        if (presetPrompt) cond.value = presetPrompt;
-        dyn.appendChild(cond);
-        dyn.appendChild(el('label', null, '检查间隔 (秒)'));
-        dyn.appendChild(el('input', { id: 'np_interval', type: 'number', value: '60' }));
-        dyn.appendChild(el('label', null, '触发动作 prompt'));
-        dyn.appendChild(el('textarea', { id: 'np_action', placeholder: '条件满足时要执行的任务' }));
-      } else {
-        dyn.appendChild(el('label', null, '触发方式'));
-        dyn.appendChild(el('div', { html:
-          '<label><input type="radio" name="schedAt" value="delay" checked/> N 分钟后</label>&nbsp;&nbsp;' +
-          '<label><input type="radio" name="schedAt" value="time"/> 在某时刻</label>&nbsp;&nbsp;' +
-          '<label><input type="radio" name="schedAt" value="cron"/> Cron</label>' }));
-        dyn.appendChild(el('input', { id: 'np_sched_value', placeholder: '5  /  2026-05-17 09:00  /  0 9 * * *' }));
-        dyn.appendChild(el('label', null, 'Prompt'));
-        const ta = el('textarea', { id: 'np_prompt' });
-        if (presetPrompt) ta.value = presetPrompt;
-        dyn.appendChild(ta);
-      }
-    } else if (r === 'subagent') {
-      dyn.appendChild(el('label', null, 'Agent 名'));
-      dyn.appendChild(el('input', { id: 'np_agent', placeholder: 'verifier / explorer / reviewer' }));
-      dyn.appendChild(el('label', null, '输入'));
-      const ta = el('textarea', { id: 'np_input' });
-      if (presetPrompt) ta.value = presetPrompt;
-      dyn.appendChild(ta);
-    } else if (r === 'plan') {
-      dyn.appendChild(el('label', null, '计划标题'));
-      dyn.appendChild(el('input', { id: 'np_title' }));
-      dyn.appendChild(el('label', null, '步骤 (每行一个)'));
-      const ta = el('textarea', { id: 'np_steps', rows: '5' });
-      if (presetPrompt) ta.value = presetPrompt;
-      dyn.appendChild(ta);
-    } else if (r === 'goal') {
-      dyn.appendChild(el('label', null, '目标描述'));
-      const ta = el('textarea', { id: 'np_goal' });
-      if (presetPrompt) ta.value = presetPrompt;
-      dyn.appendChild(ta);
-      dyn.appendChild(el('div', { class: 'row2' },
-        el('div', null, el('label', null, '预算 (秒)'), el('input', { id: 'np_budget', type: 'number', value: '600' })),
-        el('div', null, el('label', null, '最大轮次'), el('input', { id: 'np_turns', type: 'number', value: '20' })),
-      ));
-    }
-  }
-  modeSel.addEventListener('change', refreshMode);
-  refreshMode();
+  content.appendChild(el('div', { class: 'modal-desc' }, '把一段 prompt 派给 gars 后台跑。任务可在左侧列表里跟踪。'));
+  content.appendChild(el('label', null, '标题（可选）'));
+  const titleIn = el('input', { placeholder: '不填则用 prompt 前几个字' });
+  content.appendChild(titleIn);
+  content.appendChild(el('label', null, 'Prompt'));
+  const ta = el('textarea', { rows: '5', placeholder: '描述任务……' });
+  if (presetPrompt) ta.value = presetPrompt;
+  content.appendChild(ta);
 
   content.appendChild(el('div', { class: 'actions' },
     el('button', { class: 'btn', onclick: () => content._close(null) }, '取消'),
     el('button', { class: 'btn primary', onclick: async () => {
-      const m = findMode(modeSel.value);
-      if (!m) return;
+      const p = ta.value.trim();
+      if (!p) return toast('prompt 不能为空', 'err');
       try {
-        await dispatchTask(m, dyn);
+        const body = { message: p };
+        if (titleIn.value.trim()) body.title = titleIn.value.trim();
+        await api('/v1/tasks', { method: 'POST', body });
         content._close('ok');
         await refreshTasks();
         renderTaskList();
@@ -1102,48 +978,13 @@ async function openNewTaskModal(presetMode, presetPrompt) {
   modal(content);
 }
 
-async function dispatchTask(mode, dyn) {
-  const v = (id) => { const e = dyn.querySelector('#' + id); return e ? e.value : ''; };
-  const r = mode.runner_kind;
-  if (r === 'chat') {
-    const p = v('np_prompt'); if (!p.trim()) throw new Error('empty');
-    await api('/v1/tasks', { method: 'POST', body: { prompt: p, mode: mode.key } });
-  } else if (r === 'schedule') {
-    let prompt, title;
-    if (mode.key === 'trigger') {
-      const cond = v('np_cond'), interval = parseInt(v('np_interval')) || 60, action = v('np_action');
-      title = v('np_title') || '触发任务';
-      prompt = `# 触发器\n先回答（仅输出 YES 或 NO）：${cond}\n\n如果你输出 YES，则执行：${action}`;
-      await api('/v1/schedules', { method: 'POST', body: { id: 't-' + Date.now(), title, prompt, every_secs: interval, mode: 'trigger' } });
-    } else {
-      title = v('np_title') || '定时任务';
-      prompt = v('np_prompt');
-      const at = dyn.querySelector('input[name=schedAt]:checked');
-      const val = v('np_sched_value');
-      const payload = { id: 's-' + Date.now(), title, prompt, mode: 'schedule' };
-      if (at && at.value === 'cron') payload.cron = val;
-      else if (at && at.value === 'time') payload.at = val;
-      else payload.delay_secs = parseInt(val) * 60;
-      await api('/v1/schedules', { method: 'POST', body: payload });
-    }
-  } else if (r === 'subagent') {
-    await api('/v1/subagents', { method: 'POST', body: { agent: v('np_agent'), input: v('np_input') } });
-  } else if (r === 'plan') {
-    const steps = v('np_steps').split('\n').map(s => s.trim()).filter(Boolean).map(s => ({ title: s, status: 'pending' }));
-    await api('/v1/plans', { method: 'POST', body: { title: v('np_title') || '新计划', steps } });
-  } else if (r === 'goal') {
-    await api('/v1/goals', { method: 'POST', body: { goal: v('np_goal'), budget_seconds: parseInt(v('np_budget')) || 600, max_turns: parseInt(v('np_turns')) || 20 } });
-  }
-}
-
 // ╔════════════════════════════════════════════╗
 // ║              settings                      ║
 // ╚════════════════════════════════════════════╝
 const SETTINGS_TABS = [
   ['general', '通用'],
   ['llm', 'LLM'],
-  ['modes', '模式管理'],
-  ['skills', '技能管理'],
+  ['skills', '技能 (SOP)'],
   ['connectors', '连接器'],
   ['ext', '浏览器扩展'],
   ['archive', '归档'],
@@ -1174,7 +1015,6 @@ function renderSettings() {
   const fn = {
     general: renderSettingsGeneral,
     llm: renderSettingsLLM,
-    modes: renderSettingsModes,
     skills: renderSettingsSkills,
     connectors: renderSettingsConnectors,
     ext: renderSettingsExt,
@@ -1335,120 +1175,6 @@ async function renderSettingsLLM(c) {
   ));
   try { ta.value = await readConfigText(); }
   catch (e) { ta.value = '# 加载失败：' + e.message; }
-}
-
-// ── Settings: Modes ────────────────────────────
-async function renderSettingsModes(c) {
-  c.appendChild(el('h3', null, '模式管理'));
-  c.appendChild(el('div', { class: 'section-desc' }, '模式 = SOP 组合 + 运行参数。builtin 模式只读；自定义模式存到 ~/.gars/modes/local/，保存后立即生效，无需重启。'));
-
-  await loadModes(true);
-  const root = el('div', { class: 'entry-grid' });
-  const list = el('div', { class: 'entry-list' });
-  const detail = el('div', { class: 'entry-detail' });
-  root.appendChild(list); root.appendChild(detail);
-  c.appendChild(root);
-
-  list.appendChild(el('div', { class: 'toolbar' },
-    el('button', { onclick: () => openCustomModeModal() }, '＋ 自定义'),
-  ));
-
-  const modes = allModes();
-  if (!State.settings.modesSel && modes.length) State.settings.modesSel = modes[0].key;
-
-  for (const m of modes) {
-    list.appendChild(el('button', {
-      class: 'entry-item' + (State.settings.modesSel === m.key ? ' selected' : ''),
-      onclick: () => { State.settings.modesSel = m.key; renderSettings(); },
-    },
-      el('div', { class: 'ttl' }, m.label),
-      el('div', { class: 'meta' },
-        m.source === 'builtin' ? el('span', { class: 'chip' }, '内置') : el('span', { class: 'chip warn' }, m.source || 'local'),
-        ' ', (m.description || '').slice(0, 40) + ((m.description || '').length > 40 ? '…' : '')),
-    ));
-  }
-  if (!modes.length) list.appendChild(el('div', { class: 'empty' }, '没有任何模式。'));
-
-  const sel = findMode(State.settings.modesSel);
-  if (!sel) { detail.appendChild(el('div', { class: 'empty' }, '左侧选择一个模式。')); return; }
-
-  detail.appendChild(el('h4', null, sel.label));
-  detail.appendChild(el('div', { class: 'kv' },
-    el('div', { class: 'k' }, 'Key'), el('div', null, sel.key),
-    el('div', { class: 'k' }, 'Runner'), el('div', null, sel.runner_kind || ''),
-    el('div', { class: 'k' }, '来源'), el('div', null, sel.source || ''),
-    el('div', { class: 'k' }, '描述'), el('div', null, sel.description || '—'),
-    el('div', { class: 'k' }, 'SOP keys'), el('div', null, (sel.sop_keys || []).join(', ') || '—'),
-    (sel.budget_secs != null ? el('div', { class: 'k' }, 'Budget') : null),
-    (sel.budget_secs != null ? el('div', null, sel.budget_secs + ' s') : null),
-    (sel.max_turns != null ? el('div', { class: 'k' }, 'Max turns') : null),
-    (sel.max_turns != null ? el('div', null, String(sel.max_turns)) : null),
-  ));
-  if (sel.source !== 'builtin') {
-    detail.appendChild(el('button', {
-      class: 'btn danger', style: { 'margin-top': '12px' },
-      onclick: async () => {
-        try {
-          await api('/v1/modes/' + encodeURIComponent(sel.key), { method: 'DELETE' });
-          State.settings.modesSel = 'chat';
-          await loadModes(true);
-          renderSettings();
-          refreshComposerModes();
-          toast('已删除', 'ok');
-        } catch (e) {}
-      },
-    }, '删除模式'));
-  }
-}
-
-function openCustomModeModal() {
-  const content = el('div');
-  content.appendChild(el('h3', null, '自定义模式'));
-  content.appendChild(el('div', { class: 'modal-desc' }, '保存到 ~/.gars/modes/local/<key>.toml。'));
-  content.appendChild(el('label', null, 'Key (英文，唯一)'));
-  const key = el('input', { placeholder: 'my_workflow' });
-  content.appendChild(key);
-  content.appendChild(el('label', null, '名称'));
-  const lbl = el('input', { placeholder: '我的工作流' });
-  content.appendChild(lbl);
-  content.appendChild(el('label', null, 'runner_kind'));
-  const runner = el('select');
-  for (const r of ['chat', 'schedule', 'subagent', 'plan', 'goal']) runner.appendChild(el('option', { value: r }, r));
-  content.appendChild(runner);
-  content.appendChild(el('label', null, '描述'));
-  const desc = el('input');
-  content.appendChild(desc);
-  content.appendChild(el('label', null, 'sop_keys (英文逗号分隔)'));
-  const sops = el('input', { placeholder: 'plan_sop, autonomous' });
-  content.appendChild(sops);
-  content.appendChild(el('div', { class: 'row2' },
-    el('div', null, el('label', null, 'budget_secs (可空)'), el('input', { type: 'number', id: '_b' })),
-    el('div', null, el('label', null, 'max_turns (可空)'), el('input', { type: 'number', id: '_t' })),
-  ));
-  content.appendChild(el('div', { class: 'actions' },
-    el('button', { class: 'btn', onclick: () => content._close(null) }, '取消'),
-    el('button', { class: 'btn primary', onclick: async () => {
-      const k = key.value.trim(); if (!k) return toast('key 不能为空', 'err');
-      const body = {
-        key: k, label: lbl.value || k,
-        description: desc.value, runner_kind: runner.value,
-        sop_keys: sops.value.split(',').map(s => s.trim()).filter(Boolean),
-        source: 'local',
-      };
-      const b = parseInt(content.querySelector('#_b').value); if (!isNaN(b) && b > 0) body.budget_secs = b;
-      const t = parseInt(content.querySelector('#_t').value); if (!isNaN(t) && t > 0) body.max_turns = t;
-      try {
-        await api('/v1/modes', { method: 'POST', body });
-        content._close('ok');
-        State.settings.modesSel = k;
-        await loadModes(true);
-        renderSettings();
-        refreshComposerModes();
-        toast('已保存', 'ok');
-      } catch (e) {}
-    } }, '保存'),
-  ));
-  modal(content);
 }
 
 // ── Settings: Skills ───────────────────────────
@@ -1865,17 +1591,10 @@ composer.addEventListener('input', () => {
   composer.style.height = Math.min(200, composer.scrollHeight) + 'px';
 });
 document.getElementById('sendBtn').addEventListener('click', sendComposerMessage);
-document.getElementById('composerMode').addEventListener('change', (e) => {
-  State.composerMode = e.target.value;
-  refreshComposerHint();
-});
-
 async function bootstrap() {
   // Probe /health (always public)
   try { await fetch('/health').then(r => r.ok); } catch (_) {}
 
-  await loadModes(true);
-  refreshComposerModes();
   await refreshTasks();
   renderTaskList();
   renderChatPane();

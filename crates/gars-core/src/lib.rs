@@ -5,7 +5,7 @@ pub mod subagent;
 mod task_runner;
 mod tool;
 
-pub use plan_mode::{PlanFile, PlanStep, StepStatus};
+pub use plan_mode::{PlanFile, PlanStep};
 pub use protocol::{
     ChatMessage, ChatRequest, ChatResponse, DeltaSink, LlmClient, Role, ToolCall, ToolFunction,
     ToolSpec, expand_file_refs, parse_text_tool_calls, smart_truncate, trim_history_tags,

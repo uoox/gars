@@ -3,7 +3,6 @@
 mod agents;
 mod assets;
 mod market;
-mod modes;
 mod plan_scan;
 mod remote;
 mod search;
@@ -11,15 +10,10 @@ mod skill;
 
 pub use agents::{AgentDefinition, AgentRegistry};
 pub use assets::{
-    InitSummary, Manifest, embedded_agents, embedded_modes, embedded_sops, init_user_skills,
-    load_manifest,
+    InitSummary, Manifest, embedded_agents, embedded_sops, init_user_skills, load_manifest,
 };
 pub use market::{
     MarketClient, MarketDetail, MarketItem, MarketListPage, MarketQuery, parse_list_html,
-};
-pub use modes::{
-    ModeDef, delete_local_mode, load_all_modes, load_mode, load_sop_bodies, mode_hint, modes_dir,
-    resolve_mode, save_local_mode,
 };
 pub use plan_scan::{PlanSummary, scan_plans};
 pub use remote::{RemoteClient, RemoteSearchResult};

@@ -576,10 +576,9 @@ fn configure_skills(paths: &GarsPaths) -> Result<()> {
     let theme = ColorfulTheme::default();
     let summary = gars_skills::init_user_skills(paths)?;
     println!(
-        "刷新内置 SOP：{} 个，内置 agent：{} 个，内置 mode：{} 个",
+        "刷新内置 SOP：{} 个，内置 agent：{} 个",
         summary.builtin_skills.len(),
         summary.builtin_agents.len(),
-        summary.builtin_modes.len()
     );
     if !summary.migrated_to_builtin.is_empty() || !summary.migrated_to_local.is_empty() {
         println!(

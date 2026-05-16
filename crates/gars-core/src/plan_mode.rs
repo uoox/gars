@@ -1,22 +1,9 @@
 //! Plan mode file format.
 //!
-//! Plans live at `~/.gars/plans/<run_id>/plan.md` and use an 8-state step
-//! marker set inherited from upstream `lsdefine/GenericAgent`:
-//!
-//! | Marker  | Status     | Meaning                                                |
-//! | ------- | ---------- | ------------------------------------------------------ |
-//! | `[ ]`   | Pending    | Not yet started                                        |
-//! | `[✓]`   | Done       | Completed; one-line result in `note`                   |
-//! | `[D]`   | Delegate   | Delegate to a subagent (big reads / scraping / loops)  |
-//! | `[P]`   | Parallel   | Parallel execution slot (Map mode)                     |
-//! | `[?]`   | Question   | Conditional branch — agent decides which path to take  |
-//! | `[FIX]` | Fix        | Remediation step inserted after a verification failure |
-//! | `[SKIP]`| Skip       | Skipped because a dependency failed                    |
-//! | `[✗]`   | Failed     | Failed, not retried                                    |
-//!
-//! `note: ...` lines under a step add context; verification SOPs require
-//! `note: VERDICT: PASS|FAIL|PARTIAL` on `[✓]` steps emitted by the
-//! `verify` subagent.
+//! Plans live at `~/.gars/plans/<run_id>/plan.md`. v0.0.3 stores step
+//! status as the raw marker string (e.g. `[ ]`, `[D]`, `[FIX]`) — markdown
+//! is the source of truth. The runtime just shuttles the file; SOPs that
+//! read it decide what each marker means.
 
 use std::{
     fs,
@@ -26,58 +13,25 @@ use std::{
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-pub enum StepStatus {
-    Pending,
-    Done,
-    Failed,
-    Delegate,
-    Parallel,
-    Question,
-    Fix,
-    Skip,
-}
-
-impl StepStatus {
-    pub fn marker(self) -> &'static str {
-        match self {
-            Self::Pending => "[ ]",
-            Self::Done => "[✓]",
-            Self::Failed => "[✗]",
-            Self::Delegate => "[D]",
-            Self::Parallel => "[P]",
-            Self::Question => "[?]",
-            Self::Fix => "[FIX]",
-            Self::Skip => "[SKIP]",
-        }
-    }
-
-    /// Parse a free-form status string from REST / CLI clients. Accepts the
-    /// marker itself (`"[D]"`), the snake_case enum value (`"delegate"`),
-    /// and a few permissive aliases (`"d"`, `"done"`, `"failed"`, `"x"`, etc).
-    pub fn parse(s: &str) -> Option<Self> {
-        let v = s.trim().to_ascii_lowercase();
-        match v.as_str() {
-            "" | "[ ]" | "pending" | "todo" | "open" => Some(Self::Pending),
-            "[✓]" | "[x]" | "x" | "done" | "complete" | "completed" => Some(Self::Done),
-            "[✗]" | "[!]" | "failed" | "fail" => Some(Self::Failed),
-            "[d]" | "d" | "delegate" => Some(Self::Delegate),
-            "[p]" | "p" | "parallel" => Some(Self::Parallel),
-            "[?]" | "?" | "question" | "conditional" => Some(Self::Question),
-            "[fix]" | "fix" | "remediation" => Some(Self::Fix),
-            "[skip]" | "skip" | "skipped" => Some(Self::Skip),
-            _ => None,
-        }
-    }
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PlanStep {
     pub idx: usize,
     pub title: String,
-    pub status: StepStatus,
+    /// Raw marker, e.g. `"[ ]"`, `"[✓]"`, `"[D]"`, `"[FIX]"`. Empty = pending.
+    pub marker: String,
     pub note: Option<String>,
+}
+
+impl PlanStep {
+    pub fn is_done(&self) -> bool {
+        matches!(self.marker.as_str(), "[✓]" | "[x]" | "[X]")
+    }
+    pub fn is_failed(&self) -> bool {
+        matches!(self.marker.as_str(), "[✗]" | "[!]")
+    }
+    pub fn is_pending(&self) -> bool {
+        self.marker.is_empty() || self.marker == "[ ]"
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -115,19 +69,22 @@ impl PlanFile {
         self.steps = titles
             .iter()
             .enumerate()
-            .map(|(idx, title)| PlanStep {
-                idx: idx + 1,
-                title: title.clone(),
-                status: StepStatus::Pending,
+            .map(|(i, t)| PlanStep {
+                idx: i + 1,
+                title: t.clone(),
+                marker: "[ ]".to_string(),
                 note: None,
             })
             .collect();
         self.save()
     }
 
-    pub fn mark(&mut self, idx: usize, status: StepStatus, note: Option<String>) -> Result<()> {
+    /// Mark a step with a raw marker or a friendly alias. `"done"` /
+    /// `"delegate"` etc. are accepted and rewritten to the canonical
+    /// marker string.
+    pub fn mark(&mut self, idx: usize, marker: &str, note: Option<String>) -> Result<()> {
         if let Some(step) = self.steps.iter_mut().find(|s| s.idx == idx) {
-            step.status = status;
+            step.marker = normalize_marker(marker);
             step.note = note;
             self.save()
         } else {
@@ -135,31 +92,23 @@ impl PlanFile {
         }
     }
 
-    /// Total tally of `(done, failed, total)`. Kept for back-compat with
-    /// existing REST callers; deeper breakdowns can iterate `self.steps`.
     pub fn status_summary(&self) -> (usize, usize, usize) {
         let mut done = 0;
         let mut failed = 0;
         for step in &self.steps {
-            match step.status {
-                StepStatus::Done => done += 1,
-                StepStatus::Failed => failed += 1,
-                _ => {}
+            if step.is_done() {
+                done += 1;
+            } else if step.is_failed() {
+                failed += 1;
             }
         }
         (done, failed, self.steps.len())
     }
 
     pub fn render(&self) -> String {
-        let mut out = String::new();
-        out.push_str(&format!("# Plan: {}\n\n", self.title));
+        let mut out = format!("# Plan: {}\n\n", self.title);
         for step in &self.steps {
-            out.push_str(&format!(
-                "- {} {}. {}",
-                step.status.marker(),
-                step.idx,
-                step.title
-            ));
+            out.push_str(&format!("- {} {}. {}", step.marker, step.idx, step.title));
             if let Some(note) = &step.note
                 && !note.trim().is_empty()
             {
@@ -176,6 +125,25 @@ impl PlanFile {
         }
         fs::write(&self.path, self.render())?;
         Ok(())
+    }
+}
+
+/// Permissive: accept the marker itself, the snake_case status word, or
+/// a one-letter alias. Falls through to the raw input (trimmed) for any
+/// custom marker the user wants to use.
+fn normalize_marker(s: &str) -> String {
+    let v = s.trim();
+    let lower = v.to_ascii_lowercase();
+    match lower.as_str() {
+        "" | "[ ]" | "pending" | "todo" | "open" => "[ ]".into(),
+        "[✓]" | "[x]" | "x" | "done" | "complete" | "completed" => "[✓]".into(),
+        "[✗]" | "[!]" | "failed" | "fail" => "[✗]".into(),
+        "[d]" | "d" | "delegate" => "[D]".into(),
+        "[p]" | "p" | "parallel" => "[P]".into(),
+        "[?]" | "?" | "question" | "conditional" => "[?]".into(),
+        "[fix]" | "fix" | "remediation" => "[FIX]".into(),
+        "[skip]" | "skip" | "skipped" => "[SKIP]".into(),
+        _ => v.to_string(),
     }
 }
 
@@ -197,7 +165,7 @@ fn parse(content: &str, path: &Path) -> PlanFile {
             if let Some(step) = current.take() {
                 steps.push(step);
             }
-            let Some((status, after)) = strip_marker(rest) else {
+            let Some((marker, after)) = split_marker(rest) else {
                 continue;
             };
             let after = after.trim_start();
@@ -208,7 +176,7 @@ fn parse(content: &str, path: &Path) -> PlanFile {
             current = Some(PlanStep {
                 idx,
                 title: title_str,
-                status,
+                marker,
                 note: None,
             });
         } else if let Some(stripped) = trimmed.strip_prefix("note:")
@@ -227,29 +195,13 @@ fn parse(content: &str, path: &Path) -> PlanFile {
     }
 }
 
-/// Try to consume one of the 8 step markers off the start of `rest`. The
-/// multi-letter markers (`[FIX]`, `[SKIP]`) must be tried before the
-/// single-letter ones so `[FIX]` isn't matched as `[F]` etc.
-fn strip_marker(rest: &str) -> Option<(StepStatus, &str)> {
-    const TABLE: &[(&str, StepStatus)] = &[
-        ("[ ]", StepStatus::Pending),
-        ("[✓]", StepStatus::Done),
-        ("[x]", StepStatus::Done),
-        ("[X]", StepStatus::Done),
-        ("[✗]", StepStatus::Failed),
-        ("[!]", StepStatus::Failed),
-        ("[FIX]", StepStatus::Fix),
-        ("[SKIP]", StepStatus::Skip),
-        ("[D]", StepStatus::Delegate),
-        ("[P]", StepStatus::Parallel),
-        ("[?]", StepStatus::Question),
-    ];
-    for (marker, status) in TABLE {
-        if let Some(stripped) = rest.strip_prefix(marker) {
-            return Some((*status, stripped));
-        }
+/// Take whatever `[...]` token leads `rest`. Returns `(marker, remainder)`.
+fn split_marker(rest: &str) -> Option<(String, &str)> {
+    if !rest.starts_with('[') {
+        return None;
     }
-    None
+    let end = rest.find(']')?;
+    Some((rest[..=end].to_string(), &rest[end + 1..]))
 }
 
 #[cfg(test)]
@@ -263,54 +215,37 @@ mod tests {
         let mut plan = PlanFile::open_or_create(&path, "demo").unwrap();
         plan.set_steps(&["one".into(), "two".into(), "three".into()])
             .unwrap();
-        plan.mark(2, StepStatus::Done, Some("ok".into())).unwrap();
+        plan.mark(2, "done", Some("ok".into())).unwrap();
         let loaded = PlanFile::load(&path).unwrap();
         assert_eq!(loaded.steps.len(), 3);
-        assert_eq!(loaded.steps[1].status, StepStatus::Done);
+        assert!(loaded.steps[1].is_done());
         assert_eq!(loaded.steps[1].note.as_deref(), Some("ok"));
         let (done, failed, total) = loaded.status_summary();
         assert_eq!((done, failed, total), (1, 0, 3));
     }
 
     #[test]
-    fn round_trip_all_eight_markers() {
+    fn keeps_arbitrary_markers() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("plan.md");
         let mut plan = PlanFile::open_or_create(&path, "demo").unwrap();
-        plan.set_steps(&["a", "b", "c", "d", "e", "f", "g", "h"].map(String::from))
-            .unwrap();
-        plan.mark(1, StepStatus::Pending, None).unwrap();
-        plan.mark(2, StepStatus::Done, None).unwrap();
-        plan.mark(3, StepStatus::Failed, None).unwrap();
-        plan.mark(4, StepStatus::Delegate, None).unwrap();
-        plan.mark(5, StepStatus::Parallel, None).unwrap();
-        plan.mark(6, StepStatus::Question, None).unwrap();
-        plan.mark(7, StepStatus::Fix, None).unwrap();
-        plan.mark(8, StepStatus::Skip, None).unwrap();
+        plan.set_steps(&["a".into(), "b".into()]).unwrap();
+        plan.mark(1, "[D]", None).unwrap();
+        plan.mark(2, "[FIX]", None).unwrap();
         let loaded = PlanFile::load(&path).unwrap();
-        let kinds: Vec<StepStatus> = loaded.steps.iter().map(|s| s.status).collect();
-        assert_eq!(
-            kinds,
-            vec![
-                StepStatus::Pending,
-                StepStatus::Done,
-                StepStatus::Failed,
-                StepStatus::Delegate,
-                StepStatus::Parallel,
-                StepStatus::Question,
-                StepStatus::Fix,
-                StepStatus::Skip,
-            ]
-        );
+        assert_eq!(loaded.steps[0].marker, "[D]");
+        assert_eq!(loaded.steps[1].marker, "[FIX]");
     }
 
     #[test]
-    fn parse_status_string_is_permissive() {
-        assert_eq!(StepStatus::parse("[D]"), Some(StepStatus::Delegate));
-        assert_eq!(StepStatus::parse("delegate"), Some(StepStatus::Delegate));
-        assert_eq!(StepStatus::parse("SKIP"), Some(StepStatus::Skip));
-        assert_eq!(StepStatus::parse("[fix]"), Some(StepStatus::Fix));
-        assert_eq!(StepStatus::parse("done"), Some(StepStatus::Done));
-        assert_eq!(StepStatus::parse("nonsense"), None);
+    fn permissive_aliases() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("plan.md");
+        let mut plan = PlanFile::open_or_create(&path, "demo").unwrap();
+        plan.set_steps(&["a".into()]).unwrap();
+        plan.mark(1, "delegate", None).unwrap();
+        assert_eq!(plan.steps[0].marker, "[D]");
+        plan.mark(1, "skip", None).unwrap();
+        assert_eq!(plan.steps[0].marker, "[SKIP]");
     }
 }
