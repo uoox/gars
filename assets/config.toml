@@ -1,0 +1,300 @@
+# gars configuration.
+# Secrets should normally live in environment variables. Example:
+#   export OPENAI_API_KEY=...
+#   export ANTHROPIC_API_KEY=...
+
+language = "zh"
+default_llm = "primary"
+context_char_budget = 180000
+
+[server]
+bind = "127.0.0.1"
+port = 9221
+admin_token = "replace-me"
+
+[browser]
+host = "127.0.0.1"
+port = 9222
+
+# Skill Search 走 lsdefine/GenericAgent 的远程 105K 技能卡 API.
+# 远程返回 SearchResult{ final_score, relevance, quality, match_reasons,
+# warnings, skill }. remote 留空字符串 = 只用本地 BM25.
+# 注意原项目说明: 中文 query 匹配差, 用英文.
+[skills]
+remote = "http://www.fudankw.cn:58787"
+remote_key_env = "SKILL_SEARCH_KEY"
+remote_timeout_secs = 8
+# Sophub marketplace (https://fudankw.cn/sophub/) base URL.
+market = "https://fudankw.cn"
+
+[[llm.sessions]]
+name = "primary"
+provider = "openai_compatible"
+api_base = "https://api.openai.com/v1/chat/completions"
+api_key_env = "OPENAI_API_KEY"
+model = "gpt-5.2"
+native_tools = true
+stream = false
+max_tokens = 8192
+temperature = 1.0
+
+# ─────────────── Claude presets ─────────────────
+# Inspired by lsdefine/GenericAgent mykey_template.py. Uncomment whichever
+# block matches your provider, drop in the key (or export the env var), and
+# set default_llm above to point at the session name.
+#
+# 1. Anthropic 官方直连 — sk-ant-* 用 x-api-key 鉴权，model 后缀 [1m] 触发
+#    1M context beta. 真 Anthropic 端点不要开 fake_cc_system_prompt.
+# [[llm.sessions]]
+# name = "claude"
+# provider = "anthropic"
+# api_base = "https://api.anthropic.com"
+# api_key_env = "ANTHROPIC_API_KEY"
+# model = "claude-sonnet-4-6"
+# native_tools = true
+# thinking_type = "adaptive"
+# max_tokens = 16384
+# stream = true
+#
+# 2. CC switch / Claude Code 透传渠道 — sk-user-* / sk-* / cr_* 等用 Bearer，
+#    必须 fake_cc_system_prompt = true. user_agent 可以 pin 旧版本绕过 UA 校验.
+# [[llm.sessions]]
+# name = "cc-relay"
+# provider = "anthropic"
+# api_base = "https://your-cc-switch-host/claude/office"
+# api_key_env = "CC_RELAY_KEY"
+# model = "claude-opus-4-7"
+# native_tools = true
+# fake_cc_system_prompt = true
+# thinking_type = "adaptive"
+# user_agent = "claude-cli/2.1.113 (external, cli)"
+# max_tokens = 32768
+# stream = true
+#
+# 3. CRS (claude-relay-service) — cr_* key + 同样要求 fake_cc_system_prompt.
+# [[llm.sessions]]
+# name = "crs-claude"
+# provider = "anthropic"
+# api_base = "https://your-crs-host/api"
+# api_key_env = "CRS_CLAUDE_KEY"
+# model = "claude-opus-4-7[1m]"
+# native_tools = true
+# fake_cc_system_prompt = true
+# thinking_type = "adaptive"
+# max_tokens = 32768
+# read_timeout_secs = 180
+#
+# 4. 智谱 GLM-5.1 Anthropic 兼容路径.
+# [[llm.sessions]]
+# name = "glm-claude"
+# provider = "anthropic"
+# api_base = "https://open.bigmodel.cn/api/anthropic"
+# api_key_env = "ZHIPU_API_KEY"
+# model = "glm-5.1"
+# native_tools = true
+#
+# 5. MiniMax Anthropic 兼容路径.
+# [[llm.sessions]]
+# name = "minimax-claude"
+# provider = "anthropic"
+# api_base = "https://api.minimaxi.com/anthropic"
+# api_key_env = "MINIMAX_API_KEY"
+# model = "MiniMax-M2.7"
+# native_tools = true
+# temperature = 1.0
+
+# ─────────────── OpenAI-compatible presets ─────────────────
+# 任何提供 OpenAI chat/completions 兼容接口的 provider 都用 provider =
+# "openai_compatible"。下面是社区最常见的几家，按需取消注释。
+#
+# 6. Kimi / Moonshot (温度会被夹到 1.0).
+# [[llm.sessions]]
+# name = "kimi"
+# provider = "openai_compatible"
+# api_base = "https://api.moonshot.cn/v1/chat/completions"
+# api_key_env = "MOONSHOT_API_KEY"
+# model = "kimi-k2"
+# native_tools = true
+# stream = true
+# max_tokens = 16384
+#
+# 7. DeepSeek (V4 系列原生 Claude 协议；这里走 OpenAI 兼容).
+# [[llm.sessions]]
+# name = "deepseek"
+# provider = "openai_compatible"
+# api_base = "https://api.deepseek.com/v1/chat/completions"
+# api_key_env = "DEEPSEEK_API_KEY"
+# model = "deepseek-chat"
+# native_tools = true
+# stream = true
+# max_tokens = 16384
+#
+# 8. OpenRouter (聚合 300+ 模型).
+# [[llm.sessions]]
+# name = "openrouter"
+# provider = "openai_compatible"
+# api_base = "https://openrouter.ai/api/v1/chat/completions"
+# api_key_env = "OPENROUTER_API_KEY"
+# model = "anthropic/claude-sonnet-4-6"
+# native_tools = true
+# stream = true
+#
+# 9. 智谱 GLM OAI 兼容路径 (与 1d 的 Anthropic 路径同 key，不同端点).
+# [[llm.sessions]]
+# name = "glm-oai"
+# provider = "openai_compatible"
+# api_base = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+# api_key_env = "ZHIPU_API_KEY"
+# model = "glm-5.1"
+# native_tools = true
+#
+# 10. MiniMax OAI 路径 (M2.7 会带 <think> 标签，建议优先 Anthropic 路径).
+# [[llm.sessions]]
+# name = "minimax-oai"
+# provider = "openai_compatible"
+# api_base = "https://api.minimaxi.com/v1/text/chatcompletion_v2"
+# api_key_env = "MINIMAX_API_KEY"
+# model = "MiniMax-M2.7"
+# native_tools = true
+# temperature = 0.7
+#
+# 11. 阿里通义千问 (DashScope OAI 兼容).
+# [[llm.sessions]]
+# name = "qwen"
+# provider = "openai_compatible"
+# api_base = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+# api_key_env = "DASHSCOPE_API_KEY"
+# model = "qwen3-max"
+# native_tools = true
+#
+# 12. 字节豆包 (火山引擎 ARK).
+# [[llm.sessions]]
+# name = "doubao"
+# provider = "openai_compatible"
+# api_base = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
+# api_key_env = "ARK_API_KEY"
+# model = "doubao-1-6-pro"
+# native_tools = true
+#
+# 13. SiliconFlow (硅基流动) 聚合.
+# [[llm.sessions]]
+# name = "siliconflow"
+# provider = "openai_compatible"
+# api_base = "https://api.siliconflow.cn/v1/chat/completions"
+# api_key_env = "SILICONFLOW_API_KEY"
+# model = "Pro/deepseek-ai/DeepSeek-V4"
+# native_tools = true
+#
+# 14. Stepfun 阶跃星辰.
+# [[llm.sessions]]
+# name = "stepfun"
+# provider = "openai_compatible"
+# api_base = "https://api.stepfun.com/v1/chat/completions"
+# api_key_env = "STEPFUN_API_KEY"
+# model = "step-3"
+# native_tools = true
+#
+# 15. Cerebras (超快 inference).
+# [[llm.sessions]]
+# name = "cerebras"
+# provider = "openai_compatible"
+# api_base = "https://api.cerebras.ai/v1/chat/completions"
+# api_key_env = "CEREBRAS_API_KEY"
+# model = "llama-4-maverick-17b-128e-instruct"
+# native_tools = true
+#
+# 16. Groq (LPU 加速).
+# [[llm.sessions]]
+# name = "groq"
+# provider = "openai_compatible"
+# api_base = "https://api.groq.com/openai/v1/chat/completions"
+# api_key_env = "GROQ_API_KEY"
+# model = "llama-3.3-70b-versatile"
+# native_tools = true
+#
+# 17. Together.ai 聚合.
+# [[llm.sessions]]
+# name = "together"
+# provider = "openai_compatible"
+# api_base = "https://api.together.xyz/v1/chat/completions"
+# api_key_env = "TOGETHER_API_KEY"
+# model = "deepseek-ai/DeepSeek-V4"
+# native_tools = true
+#
+# 18. Mistral (官方 La Plateforme).
+# [[llm.sessions]]
+# name = "mistral"
+# provider = "openai_compatible"
+# api_base = "https://api.mistral.ai/v1/chat/completions"
+# api_key_env = "MISTRAL_API_KEY"
+# model = "mistral-large-latest"
+# native_tools = true
+#
+# 19. Gemini OAI 兼容 (Google AI Studio 兼容端点).
+# [[llm.sessions]]
+# name = "gemini"
+# provider = "openai_compatible"
+# api_base = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+# api_key_env = "GEMINI_API_KEY"
+# model = "gemini-3.0-pro"
+# native_tools = true
+#
+# 20. xAI Grok.
+# [[llm.sessions]]
+# name = "grok"
+# provider = "openai_compatible"
+# api_base = "https://api.x.ai/v1/chat/completions"
+# api_key_env = "XAI_API_KEY"
+# model = "grok-5"
+# native_tools = true
+#
+# ─────────────── 本地 / 自托管 ─────────────────
+#
+# 21. llama.cpp server (./server --port 8080).
+# [[llm.sessions]]
+# name = "llamacpp"
+# provider = "openai_compatible"
+# api_base = "http://127.0.0.1:8080/v1/chat/completions"
+# model = "local"
+# native_tools = false
+# text_protocol = true
+#
+# 22. Ollama (默认 11434, 11434 上有 OAI 兼容路径).
+# [[llm.sessions]]
+# name = "ollama"
+# provider = "openai_compatible"
+# api_base = "http://127.0.0.1:11434/v1/chat/completions"
+# model = "llama3.3:70b"
+# native_tools = true
+#
+# 23. vLLM (./vllm serve …, 默认 8000).
+# [[llm.sessions]]
+# name = "vllm"
+# provider = "openai_compatible"
+# api_base = "http://127.0.0.1:8000/v1/chat/completions"
+# model = "deepseek-ai/DeepSeek-V4"
+# native_tools = true
+#
+# 24. LM Studio (默认 1234).
+# [[llm.sessions]]
+# name = "lmstudio"
+# provider = "openai_compatible"
+# api_base = "http://127.0.0.1:1234/v1/chat/completions"
+# model = "local"
+# native_tools = false
+# text_protocol = true
+
+[[llm.mixins]]
+name = "primary"
+sessions = ["primary"]
+max_retries = 3
+base_delay_ms = 800
+spring_back_secs = 300
+
+# Mixin failover example: try Claude first, fall back to OpenAI.
+# [[llm.mixins]]
+# name = "robust"
+# sessions = ["claude", "primary"]
+# max_retries = 6
+# base_delay_ms = 800
+# spring_back_secs = 300

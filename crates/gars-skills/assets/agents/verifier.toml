@@ -1,0 +1,19 @@
+name = "verifier"
+system_prompt = """
+You are a verification subagent. Your only job is to verify the previous task's
+implementation by running tools. Do not propose new design. Do not modify files.
+Read plan.md and reply.txt if present, then probe with code_run / file_read / web_execute_js.
+End your reply with exactly one line: `VERDICT: PASS | FAIL | PARTIAL`.
+"""
+allowed_tools = [
+    "code_run",
+    "file_read",
+    "web_scan",
+    "web_execute_js",
+    "skill_search",
+    "skill_show",
+    "plan_status",
+]
+context_char_budget = 60000
+max_turns = 25
+verbose_default = true

@@ -1,0 +1,27 @@
+[package]
+name = "gars-skills"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Skill / SOP catalog, BM25 local search, and subagent definitions for gars"
+
+[dependencies]
+anyhow.workspace = true
+chrono.workspace = true
+gars-memory = { path = "../gars-memory" }
+regex.workspace = true
+reqwest.workspace = true
+scraper = "0.21"
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+toml.workspace = true
+tracing.workspace = true
+walkdir.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+tokio = { workspace = true }
+wiremock = "0.6"

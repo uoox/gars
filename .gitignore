@@ -1,0 +1,13 @@
+/target/
+/dist/
+/.idea/
+/.vscode/
+.DS_Store
+*.log
+*.tmp
+ga-darwin-arm64.tar.gz
+
+# Extension build outputs
+/extension/dist/
+/extension/dist.zip
+/extension/node_modules/

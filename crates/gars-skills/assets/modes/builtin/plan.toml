@@ -1,0 +1,5 @@
+key = "plan"
+label = "规划模式"
+description = "把多步任务拆成可勾选的 plan.md，一步步推进。每一步可独立验证 / 标记。"
+runner_kind = "plan"
+sop_keys = ["plan_sop"]

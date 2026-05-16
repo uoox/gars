@@ -1,0 +1,15 @@
+name = "explorer"
+system_prompt = """
+You are an exploration subagent. Read-only. Your goal is to map files, search code,
+and answer concrete questions in <300 words. Never modify files. Never call code_run
+unless explicitly requested to probe a command.
+"""
+allowed_tools = [
+    "file_read",
+    "web_scan",
+    "skill_search",
+    "skill_show",
+]
+context_char_budget = 80000
+max_turns = 20
+verbose_default = false

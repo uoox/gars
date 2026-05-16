@@ -1,0 +1,1101 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>gars 控制台</title>
+<style>
+:root {
+  --bg: #0f1115;
+  --panel: #161a22;
+  --panel-2: #1d222c;
+  --line: #262d3a;
+  --fg: #d8dee9;
+  --muted: #8a93a6;
+  --accent: #4f8cff;
+  --accent-2: #6ee7b7;
+  --warn: #f7c97e;
+  --danger: #ef6b6b;
+  --radius: 6px;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f7f8fa; --panel: #fff; --panel-2: #f0f2f5; --line: #e1e4ea;
+    --fg: #1f2330; --muted: #61697a; --accent: #2a6df4;
+  }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 13.5px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Microsoft YaHei", "Helvetica Neue", sans-serif;
+}
+header.topbar {
+  display: flex; align-items: center; gap: 12px;
+  height: 42px; padding: 0 14px;
+  background: var(--panel); border-bottom: 1px solid var(--line);
+}
+header .brand { font-weight: 600; letter-spacing: .3px; }
+header .brand b { color: var(--accent); }
+header input.token {
+  flex: 0 1 280px; min-width: 0; height: 26px; padding: 0 8px;
+  background: var(--panel-2); border: 1px solid var(--line); color: var(--fg);
+  border-radius: var(--radius); font-family: ui-monospace, monospace; font-size: 12px;
+}
+header .conn {
+  display: inline-flex; align-items: center; gap: 6px; color: var(--muted);
+  font-size: 12px; margin-left: auto;
+}
+header .conn .dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--muted);
+}
+header .conn.connected .dot { background: var(--accent-2); }
+
+main.layout {
+  display: grid; grid-template-columns: 180px 320px 1fr;
+  height: calc(100% - 42px);
+}
+@media (max-width: 1000px) {
+  main.layout { grid-template-columns: 140px 260px 1fr; }
+}
+nav.sidebar {
+  background: var(--panel); border-right: 1px solid var(--line);
+  padding: 10px 0;
+}
+nav.sidebar button {
+  display: block; width: 100%; text-align: left;
+  padding: 8px 16px; background: transparent; color: var(--fg);
+  border: 0; cursor: pointer; font-size: 13.5px;
+}
+nav.sidebar button:hover { background: var(--panel-2); }
+nav.sidebar button.active {
+  background: var(--panel-2); color: var(--accent); border-left: 2px solid var(--accent);
+  padding-left: 14px;
+}
+
+section.list {
+  background: var(--panel); border-right: 1px solid var(--line);
+  overflow-y: auto;
+}
+section.list .toolbar {
+  position: sticky; top: 0; background: var(--panel);
+  display: flex; gap: 6px; padding: 8px; border-bottom: 1px solid var(--line);
+  z-index: 1;
+}
+section.list .toolbar input, section.list .toolbar select {
+  flex: 1; min-width: 0; height: 26px; padding: 0 6px;
+  background: var(--panel-2); border: 1px solid var(--line);
+  color: var(--fg); border-radius: var(--radius); font-size: 12.5px;
+}
+section.list .toolbar button {
+  height: 26px; padding: 0 10px; background: var(--accent); color: white;
+  border: 0; border-radius: var(--radius); cursor: pointer; font-size: 12.5px;
+}
+section.list .toolbar button.ghost {
+  background: var(--panel-2); color: var(--fg); border: 1px solid var(--line);
+}
+section.list .item {
+  display: block; width: 100%; text-align: left;
+  padding: 10px 12px; border: 0; background: transparent;
+  border-bottom: 1px solid var(--line); color: var(--fg);
+  cursor: pointer;
+}
+section.list .item:hover { background: var(--panel-2); }
+section.list .item.selected { background: var(--panel-2); }
+section.list .item .ttl { font-weight: 500; }
+section.list .item .meta { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+.chip {
+  display: inline-block; padding: 1px 6px; border-radius: 10px;
+  background: var(--panel-2); border: 1px solid var(--line);
+  color: var(--muted); font-size: 11px; margin-right: 4px;
+}
+.chip.accent { color: var(--accent); border-color: var(--accent); }
+.chip.warn { color: var(--warn); border-color: var(--warn); }
+.chip.ok { color: var(--accent-2); border-color: var(--accent-2); }
+
+section.detail {
+  background: var(--bg); overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+section.detail .hd {
+  padding: 10px 16px; border-bottom: 1px solid var(--line);
+  display: flex; gap: 8px; align-items: center;
+}
+section.detail .hd h2 { margin: 0; font-size: 15px; font-weight: 600; }
+section.detail .body {
+  flex: 1; padding: 16px; overflow-y: auto;
+}
+section.detail .body.markdown { padding: 18px 24px; }
+.markdown h1, .markdown h2, .markdown h3 { margin-top: 1.2em; }
+.markdown pre {
+  background: var(--panel); padding: 10px; border-radius: var(--radius);
+  overflow-x: auto;
+}
+.markdown code {
+  background: var(--panel); padding: 1px 4px; border-radius: 3px;
+  font-family: ui-monospace, monospace; font-size: 12px;
+}
+.markdown pre code { padding: 0; background: transparent; }
+.markdown table { border-collapse: collapse; }
+.markdown td, .markdown th { border: 1px solid var(--line); padding: 4px 8px; }
+
+.chat-stream { flex: 1; overflow-y: auto; padding: 12px 16px; }
+.chat-msg { margin-bottom: 14px; }
+.chat-msg .role { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+.chat-msg.user .role { color: var(--accent); }
+.chat-msg .markdown { background: var(--panel); padding: 10px 12px; border-radius: var(--radius); }
+.chat-msg.user .markdown { background: var(--panel-2); }
+.chat-input { display: flex; gap: 6px; padding: 10px 16px; border-top: 1px solid var(--line); background: var(--panel); }
+.chat-input textarea {
+  flex: 1; min-height: 50px; max-height: 180px; resize: vertical;
+  background: var(--panel-2); border: 1px solid var(--line); color: var(--fg);
+  padding: 8px; border-radius: var(--radius); font: inherit;
+}
+.chat-input button {
+  align-self: flex-end; height: 30px; padding: 0 14px;
+  background: var(--accent); color: white; border: 0; border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.empty { padding: 40px 24px; color: var(--muted); text-align: center; }
+
+/* modal */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.modal {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); width: 520px; max-width: 92vw;
+  max-height: 90vh; overflow-y: auto; padding: 18px 20px;
+}
+.modal h3 { margin: 0 0 12px 0; font-size: 16px; }
+.modal label { display: block; margin: 10px 0 4px 0; font-size: 12.5px; color: var(--muted); }
+.modal input, .modal textarea, .modal select {
+  width: 100%; background: var(--panel-2); border: 1px solid var(--line);
+  color: var(--fg); padding: 6px 8px; border-radius: var(--radius); font: inherit;
+}
+.modal textarea { min-height: 80px; resize: vertical; }
+.modal .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+.modal .actions button {
+  padding: 6px 14px; border: 1px solid var(--line); background: var(--panel-2);
+  color: var(--fg); border-radius: var(--radius); cursor: pointer;
+}
+.modal .actions button.primary { background: var(--accent); color: white; border-color: var(--accent); }
+
+.modal .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.modal .hint { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+
+/* toast */
+.toast-host { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 200; }
+.toast { background: var(--panel); border: 1px solid var(--line); padding: 8px 12px; border-radius: var(--radius); font-size: 12.5px; max-width: 360px; }
+.toast.err { border-color: var(--danger); color: var(--danger); }
+.toast.ok { border-color: var(--accent-2); color: var(--accent-2); }
+
+/* tabs (sub-tabs in settings) */
+.subtabs { display: flex; gap: 4px; padding: 8px; border-bottom: 1px solid var(--line); }
+.subtabs button {
+  padding: 4px 10px; background: var(--panel-2); border: 1px solid var(--line);
+  color: var(--fg); border-radius: var(--radius); cursor: pointer; font-size: 12.5px;
+}
+.subtabs button.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+.config-edit textarea {
+  width: 100%; min-height: 360px; resize: vertical; padding: 10px;
+  background: var(--panel); border: 1px solid var(--line); color: var(--fg);
+  font-family: ui-monospace, monospace; font-size: 12.5px; border-radius: var(--radius);
+}
+
+.market-card { cursor: pointer; }
+.market-card .preview {
+  color: var(--muted); font-size: 11.5px; margin-top: 4px;
+  overflow: hidden; text-overflow: ellipsis;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+
+.kv { display: grid; grid-template-columns: 130px 1fr; gap: 4px 12px; margin: 6px 0; }
+.kv .k { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <span class="brand"><b>gars</b> 控制台</span>
+  <input class="token" id="tokenInput" placeholder="admin token (从 ~/.gars/config.toml 拷贝)" />
+  <span class="conn" id="connStatus"><span class="dot"></span><span class="lbl">未连接</span></span>
+</header>
+
+<main class="layout">
+  <nav class="sidebar">
+    <button data-tab="tasks" class="active">📋 任务列表</button>
+    <button data-tab="skills">📚 技能管理</button>
+    <button data-tab="modes">⚙️ 模式管理</button>
+    <button data-tab="settings">🛠 设置</button>
+  </nav>
+  <section class="list" id="listCol"></section>
+  <section class="detail" id="detailCol"></section>
+</main>
+
+<div class="toast-host" id="toasts"></div>
+
+<!-- markdown-it + highlight.js via CDN. Failure to load is fine — fallback to <pre>. -->
+<script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/lib/index.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/styles/github-dark.min.css" />
+
+<script>
+// =============== state =================
+const State = {
+  tab: 'tasks',
+  tasks: [],
+  selectedTaskId: null,
+  skills: { mode: 'local', items: [], query: '', selectedKey: null, marketSel: null, marketPage: 1, marketSource: '', marketLevel: '' },
+  modes: { selectedKey: 'chat', list: [], loaded: false },
+  settings: { sub: 'llm' },
+  ws: null,
+};
+const TOKEN_KEY = 'gars.adminToken';
+
+function getToken() {
+  const t = document.getElementById('tokenInput').value.trim();
+  if (t) localStorage.setItem(TOKEN_KEY, t);
+  return t;
+}
+function loadToken() {
+  const t = localStorage.getItem(TOKEN_KEY) || '';
+  document.getElementById('tokenInput').value = t;
+  return t;
+}
+
+// =============== API ===================
+async function api(path, opts = {}) {
+  const token = getToken();
+  const headers = Object.assign({}, opts.headers || {});
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  if (opts.body && !(opts.body instanceof FormData) && typeof opts.body === 'object') {
+    headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(opts.body);
+  }
+  const res = await fetch(path, Object.assign({}, opts, { headers }));
+  if (!res.ok) {
+    let text = await res.text();
+    try { const j = JSON.parse(text); text = j.error || j.message || text; } catch (_) {}
+    toast(`${res.status} ${res.statusText}: ${text}`.slice(0, 240), 'err');
+    throw new Error(text);
+  }
+  const ct = res.headers.get('content-type') || '';
+  if (ct.includes('application/json')) return await res.json();
+  return await res.text();
+}
+
+// =============== UI helpers ============
+function el(tag, attrs, ...children) {
+  const e = document.createElement(tag);
+  if (attrs) {
+    for (const k in attrs) {
+      if (k === 'class') e.className = attrs[k];
+      else if (k === 'style' && typeof attrs[k] === 'object') Object.assign(e.style, attrs[k]);
+      else if (k.startsWith('on') && typeof attrs[k] === 'function') e.addEventListener(k.slice(2).toLowerCase(), attrs[k]);
+      else if (k === 'html') e.innerHTML = attrs[k];
+      else e.setAttribute(k, attrs[k]);
+    }
+  }
+  for (const c of children) {
+    if (c === null || c === undefined) continue;
+    if (typeof c === 'string') e.appendChild(document.createTextNode(c));
+    else e.appendChild(c);
+  }
+  return e;
+}
+function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+let md = null;
+function getMD() {
+  if (md) return md;
+  if (typeof window.markdownit === 'function') {
+    md = window.markdownit({
+      html: false, linkify: true, breaks: false,
+      highlight: function (str, lang) {
+        if (typeof window.hljs !== 'undefined' && lang && window.hljs.getLanguage(lang)) {
+          try { return window.hljs.highlight(str, { language: lang }).value; } catch (_) {}
+        }
+        return '';
+      },
+    });
+  }
+  return md;
+}
+function renderMD(text) {
+  const m = getMD();
+  if (m) {
+    const div = el('div', { class: 'markdown' });
+    div.innerHTML = m.render(text || '');
+    return div;
+  }
+  return el('pre', { class: 'markdown' }, text || '');
+}
+
+function toast(msg, kind) {
+  const host = document.getElementById('toasts');
+  const t = el('div', { class: 'toast ' + (kind || '') }, msg);
+  host.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 400); }, 4000);
+}
+
+function modal(content) {
+  return new Promise((resolve) => {
+    const back = el('div', { class: 'modal-backdrop' });
+    const body = el('div', { class: 'modal' });
+    back.appendChild(body);
+    body.appendChild(content);
+    document.body.appendChild(back);
+    back.addEventListener('click', (ev) => {
+      if (ev.target === back) { back.remove(); resolve(null); }
+    });
+    content._close = (val) => { back.remove(); resolve(val); };
+  });
+}
+
+// =============== modes =================
+// Modes are loaded from the backend (~/.gars/modes/{builtin,local}/<key>.toml).
+// Frontend caches the list in State.modes.list. Each mode has fields:
+//   { key, label, description, runner_kind, sop_keys, allowed_tools,
+//     budget_secs, max_turns, source }
+// `source` is 'builtin' | 'local' | 'imported'.
+// Front-end maps runner_kind → REST endpoint to call when the user submits
+// "新建任务".
+async function loadModes(force) {
+  if (State.modes.loaded && !force) return State.modes.list;
+  try {
+    const data = await api('/v1/modes');
+    State.modes.list = data.modes || [];
+    State.modes.loaded = true;
+  } catch (e) { State.modes.list = []; }
+  return State.modes.list;
+}
+function allModes() { return State.modes.list || []; }
+function findMode(key) { return allModes().find(m => m.key === key); }
+function modeDesc(m) { return m ? (m.description || '') : ''; }
+
+// =============== tab routing ===========
+document.querySelectorAll('nav.sidebar button').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+function switchTab(tab) {
+  State.tab = tab;
+  document.querySelectorAll('nav.sidebar button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  if (tab === 'tasks') renderTasksTab();
+  else if (tab === 'skills') renderSkillsTab();
+  else if (tab === 'modes') renderModesTab();
+  else if (tab === 'settings') renderSettingsTab();
+}
+
+// =============== Tasks tab =============
+async function refreshTasks() {
+  try {
+    const data = await api('/v1/tasks?limit=50');
+    State.tasks = data.tasks || data || [];
+  } catch (e) { State.tasks = []; }
+}
+
+function renderTasksTab() {
+  const list = document.getElementById('listCol');
+  const det = document.getElementById('detailCol');
+  clear(list); clear(det);
+
+  list.appendChild(el('div', { class: 'toolbar' },
+    el('button', { onclick: () => openNewTaskModal() }, '+ 新建任务'),
+    el('button', { class: 'ghost', onclick: async () => { await refreshTasks(); renderTasksTab(); } }, '⟳'),
+  ));
+
+  refreshTasks().then(() => {
+    clear(list);
+    list.appendChild(el('div', { class: 'toolbar' },
+      el('button', { onclick: () => openNewTaskModal() }, '+ 新建任务'),
+      el('button', { class: 'ghost', onclick: async () => { await refreshTasks(); renderTasksTab(); } }, '⟳'),
+    ));
+    if (!State.tasks.length) {
+      list.appendChild(el('div', { class: 'empty' }, '还没有任务。点击「+ 新建任务」开始。'));
+    } else {
+      for (const t of State.tasks) {
+        const item = el('button', {
+          class: 'item' + (State.selectedTaskId === t.id ? ' selected' : ''),
+          onclick: () => { State.selectedTaskId = t.id; renderTasksTab(); },
+        },
+          el('div', { class: 'ttl' }, t.title || t.prompt || t.id),
+          el('div', { class: 'meta' },
+            el('span', { class: 'chip accent' }, t.mode || '普通'),
+            el('span', { class: 'chip' }, t.status || ''),
+            ' ', formatTs(t.created_at || t.createdAt))
+        );
+        list.appendChild(item);
+      }
+    }
+  });
+
+  if (!State.selectedTaskId) {
+    det.appendChild(el('div', { class: 'hd' }, el('h2', null, '聊天')));
+    det.appendChild(buildChatPanel());
+  } else {
+    renderTaskDetail(State.selectedTaskId, det);
+  }
+}
+
+function buildChatPanel() {
+  const wrap = el('div', { class: 'body', style: { padding: 0, display: 'flex', 'flex-direction': 'column', flex: '1' } });
+  const stream = el('div', { class: 'chat-stream' });
+  const input = el('textarea', { placeholder: '输入消息，Cmd/Ctrl+Enter 发送...' });
+  const sendBtn = el('button', { onclick: () => send() }, '发送');
+  input.addEventListener('keydown', (ev) => {
+    if ((ev.metaKey || ev.ctrlKey) && ev.key === 'Enter') { ev.preventDefault(); send(); }
+  });
+  async function send() {
+    const txt = input.value.trim();
+    if (!txt) return;
+    stream.appendChild(el('div', { class: 'chat-msg user' },
+      el('div', { class: 'role' }, '你'), renderMD(txt)));
+    input.value = '';
+    const replyHost = el('div', { class: 'chat-msg' },
+      el('div', { class: 'role' }, 'gars'),
+      renderMD('思考中…'));
+    stream.appendChild(replyHost);
+    stream.scrollTop = stream.scrollHeight;
+    try {
+      const resp = await fetch('/v1/chat/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+        body: JSON.stringify({ message: txt, stream: true }),
+      });
+      if (!resp.ok || !resp.body) {
+        const err = await resp.text();
+        replyHost.replaceChild(renderMD('请求失败: ' + err), replyHost.lastChild);
+        return;
+      }
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '', full = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let idx;
+        while ((idx = buf.indexOf('\n\n')) >= 0) {
+          const ev = buf.slice(0, idx);
+          buf = buf.slice(idx + 2);
+          for (const line of ev.split('\n')) {
+            if (line.startsWith('data:')) {
+              try {
+                const j = JSON.parse(line.slice(5).trim());
+                if (j.delta) full += j.delta;
+                else if (j.text) full += j.text;
+                else if (j.done) {}
+              } catch (_) {}
+            }
+          }
+          replyHost.replaceChild(renderMD(full || '…'), replyHost.lastChild);
+          stream.scrollTop = stream.scrollHeight;
+        }
+      }
+    } catch (e) {
+      replyHost.replaceChild(renderMD('错误: ' + e.message), replyHost.lastChild);
+    }
+  }
+  const bar = el('div', { class: 'chat-input' }, input, sendBtn);
+  wrap.appendChild(stream); wrap.appendChild(bar);
+  return wrap;
+}
+
+async function renderTaskDetail(id, det) {
+  det.appendChild(el('div', { class: 'hd' }, el('h2', null, '任务 ' + id)));
+  const body = el('div', { class: 'body' });
+  det.appendChild(body);
+  try {
+    const t = await api('/v1/tasks/' + id);
+    body.appendChild(el('div', { class: 'kv' },
+      el('div', { class: 'k' }, '标题'), el('div', null, t.title || t.prompt || ''),
+      el('div', { class: 'k' }, '模式'), el('div', null, t.mode || '普通'),
+      el('div', { class: 'k' }, '状态'), el('div', null, t.status || ''),
+      el('div', { class: 'k' }, '创建于'), el('div', null, formatTs(t.created_at)),
+    ));
+    if (t.result) {
+      body.appendChild(el('h3', null, '结果'));
+      body.appendChild(renderMD(typeof t.result === 'string' ? t.result : JSON.stringify(t.result, null, 2)));
+    }
+  } catch (e) {}
+}
+
+async function openNewTaskModal() {
+  await loadModes();
+  const content = el('div');
+  content.appendChild(el('h3', null, '新建任务'));
+  content.appendChild(el('label', null, '模式'));
+  const modeSel = el('select');
+  for (const m of allModes()) {
+    modeSel.appendChild(el('option', { value: m.key }, m.label));
+  }
+  content.appendChild(modeSel);
+  const hint = el('div', { class: 'hint' }, modeDesc(findMode('chat') || allModes()[0]));
+  content.appendChild(hint);
+
+  const dyn = el('div');
+  content.appendChild(dyn);
+
+  function refreshMode() {
+    const m = findMode(modeSel.value);
+    hint.textContent = modeDesc(m);
+    clear(dyn);
+    if (!m) return;
+    const runner = m.runner_kind;
+    if (runner === 'chat') {
+      dyn.appendChild(el('label', null, 'Prompt'));
+      const ta = el('textarea', { id: 'np_prompt', rows: '4' });
+      if (m.prompt_template) ta.value = m.prompt_template;
+      dyn.appendChild(ta);
+    } else if (runner === 'schedule') {
+      dyn.appendChild(el('label', null, '标题'));
+      dyn.appendChild(el('input', { id: 'np_title', placeholder: '例如：每天早上摘要' }));
+      if (m.key === 'trigger') {
+        dyn.appendChild(el('label', null, '触发条件 (LLM YES/NO prompt)'));
+        dyn.appendChild(el('textarea', { id: 'np_cond', placeholder: '例如：检查 ~/Downloads 是否有新 PDF' }));
+        dyn.appendChild(el('label', null, '检查间隔 (秒)'));
+        dyn.appendChild(el('input', { id: 'np_interval', type: 'number', value: '60' }));
+        dyn.appendChild(el('label', null, '触发动作 prompt'));
+        dyn.appendChild(el('textarea', { id: 'np_action', placeholder: '条件满足时要执行的任务' }));
+      } else {
+        dyn.appendChild(el('label', null, '触发方式'));
+        const radios = el('div', { html:
+          '<label><input type="radio" name="schedAt" value="delay" checked/> N 分钟后</label>&nbsp;&nbsp;' +
+          '<label><input type="radio" name="schedAt" value="time"/> 在某时刻</label>&nbsp;&nbsp;' +
+          '<label><input type="radio" name="schedAt" value="cron"/> Cron</label>'
+        });
+        dyn.appendChild(radios);
+        dyn.appendChild(el('input', { id: 'np_sched_value', placeholder: '5  /  2026-05-17 09:00  /  0 9 * * *' }));
+        dyn.appendChild(el('label', null, 'Prompt'));
+        dyn.appendChild(el('textarea', { id: 'np_prompt' }));
+      }
+    } else if (runner === 'subagent') {
+      dyn.appendChild(el('label', null, 'Agent 名'));
+      dyn.appendChild(el('input', { id: 'np_agent', placeholder: 'verifier / explorer / reviewer' }));
+      dyn.appendChild(el('label', null, '输入'));
+      dyn.appendChild(el('textarea', { id: 'np_input' }));
+    } else if (runner === 'plan') {
+      dyn.appendChild(el('label', null, '计划标题'));
+      dyn.appendChild(el('input', { id: 'np_title' }));
+      dyn.appendChild(el('label', null, '步骤 (每行一个)'));
+      dyn.appendChild(el('textarea', { id: 'np_steps', rows: '5' }));
+    } else if (runner === 'goal') {
+      dyn.appendChild(el('label', null, '目标描述'));
+      dyn.appendChild(el('textarea', { id: 'np_goal' }));
+      dyn.appendChild(el('div', { class: 'row2' },
+        el('div', null,
+          el('label', null, '预算 (秒)'),
+          el('input', { id: 'np_budget', type: 'number', value: '600' })),
+        el('div', null,
+          el('label', null, '最大轮次'),
+          el('input', { id: 'np_turns', type: 'number', value: '20' }))));
+    }
+  }
+  modeSel.addEventListener('change', refreshMode);
+  refreshMode();
+
+  const cancel = el('button', { onclick: () => content._close(null) }, '取消');
+  const submit = el('button', { class: 'primary', onclick: async () => {
+    const m = findMode(modeSel.value);
+    if (!m) return;
+    try {
+      await dispatchTask(m, dyn);
+      content._close('ok');
+      await refreshTasks();
+      renderTasksTab();
+      toast('已创建', 'ok');
+    } catch (e) {}
+  } }, '创建');
+  content.appendChild(el('div', { class: 'actions' }, cancel, submit));
+  modal(content);
+}
+
+async function dispatchTask(mode, dyn) {
+  const v = (id) => { const e = dyn.querySelector('#' + id); return e ? e.value : ''; };
+  const runner = mode.runner_kind;
+  if (runner === 'chat') {
+    const p = v('np_prompt'); if (!p.trim()) throw new Error('empty');
+    await api('/v1/tasks', { method: 'POST', body: { prompt: p, mode: mode.key } });
+  } else if (runner === 'schedule') {
+    let prompt, title;
+    if (mode.key === 'trigger') {
+      const cond = v('np_cond'), interval = parseInt(v('np_interval')) || 60, action = v('np_action');
+      title = v('np_title') || '触发任务';
+      prompt = `# 触发器\n先回答（仅输出 YES 或 NO）：${cond}\n\n如果你输出 YES，则执行：${action}`;
+      await api('/v1/schedules', { method: 'POST', body: {
+        id: 't-' + Date.now(), title, prompt, every_secs: interval, mode: 'trigger',
+      }});
+    } else {
+      title = v('np_title') || '定时任务';
+      prompt = v('np_prompt');
+      const at = dyn.querySelector('input[name=schedAt]:checked');
+      const val = v('np_sched_value');
+      const payload = { id: 's-' + Date.now(), title, prompt, mode: 'schedule' };
+      if (at && at.value === 'cron') payload.cron = val;
+      else if (at && at.value === 'time') payload.at = val;
+      else payload.delay_secs = parseInt(val) * 60;
+      await api('/v1/schedules', { method: 'POST', body: payload });
+    }
+  } else if (runner === 'subagent') {
+    await api('/v1/subagents', { method: 'POST', body: { agent: v('np_agent'), input: v('np_input') } });
+  } else if (runner === 'plan') {
+    const steps = v('np_steps').split('\n').map(s => s.trim()).filter(Boolean).map(s => ({ title: s, status: 'pending' }));
+    await api('/v1/plans', { method: 'POST', body: { title: v('np_title') || '新计划', steps } });
+  } else if (runner === 'goal') {
+    await api('/v1/goals', { method: 'POST', body: {
+      goal: v('np_goal'),
+      budget_seconds: parseInt(v('np_budget')) || 600,
+      max_turns: parseInt(v('np_turns')) || 20,
+    }});
+  }
+}
+
+// =============== Skills tab ============
+function renderSkillsTab() {
+  const list = document.getElementById('listCol');
+  const det = document.getElementById('detailCol');
+  clear(list); clear(det);
+  // Mode chips
+  const switcher = el('div', { class: 'toolbar' },
+    el('button', {
+      class: State.skills.mode === 'local' ? '' : 'ghost',
+      onclick: () => { State.skills.mode = 'local'; renderSkillsTab(); }
+    }, '本地'),
+    el('button', {
+      class: State.skills.mode === 'market' ? '' : 'ghost',
+      onclick: () => { State.skills.mode = 'market'; renderSkillsTab(); }
+    }, '市场'),
+  );
+  list.appendChild(switcher);
+
+  if (State.skills.mode === 'local') {
+    const q = el('input', { placeholder: '搜索 (英文更准) ...', value: State.skills.query });
+    q.addEventListener('keydown', async (ev) => {
+      if (ev.key === 'Enter') { State.skills.query = q.value; await loadLocalSkills(); renderSkillsTab(); }
+    });
+    list.appendChild(el('div', { class: 'toolbar' }, q,
+      el('button', { class: 'ghost', onclick: () => importByUrl() }, '导入')));
+    loadLocalSkills().then(() => renderLocalSkillList(list, det));
+  } else {
+    const q = el('input', { placeholder: '搜索 sophub ...', value: State.skills.query });
+    q.addEventListener('keydown', async (ev) => { if (ev.key === 'Enter') { State.skills.query = q.value; State.skills.marketPage = 1; loadMarket(list, det); } });
+    const sourceSel = el('select');
+    for (const [v, l] of [['', '全部来源'], ['official', '官方'], ['community', '用户投稿']]) {
+      sourceSel.appendChild(el('option', { value: v, ...(v === State.skills.marketSource ? { selected: 'selected' } : {}) }, l));
+    }
+    sourceSel.addEventListener('change', () => { State.skills.marketSource = sourceSel.value; State.skills.marketPage = 1; loadMarket(list, det); });
+    const levelSel = el('select');
+    for (const [v, l] of [['', '全部等级'], ['普通', '普通'], ['精良', '精良'], ['稀有', '稀有'], ['史诗', '史诗'], ['传说', '传说']]) {
+      levelSel.appendChild(el('option', { value: v, ...(v === State.skills.marketLevel ? { selected: 'selected' } : {}) }, l));
+    }
+    levelSel.addEventListener('change', () => { State.skills.marketLevel = levelSel.value; State.skills.marketPage = 1; loadMarket(list, det); });
+    list.appendChild(el('div', { class: 'toolbar' }, q, sourceSel, levelSel));
+    loadMarket(list, det);
+  }
+}
+
+async function loadLocalSkills() {
+  try {
+    const q = State.skills.query;
+    const data = await api('/v1/skills' + (q ? '?q=' + encodeURIComponent(q) + '&k=30' : ''));
+    State.skills.items = data.hits || [];
+  } catch (e) { State.skills.items = []; }
+}
+function renderLocalSkillList(list, det) {
+  for (const hit of State.skills.items) {
+    const s = hit.skill || hit;
+    const item = el('button', {
+      class: 'item' + (State.skills.selectedKey === s.key ? ' selected' : ''),
+      onclick: () => { State.skills.selectedKey = s.key; renderSkillDetail(det, s.key); }
+    },
+      el('div', { class: 'ttl' }, s.name || s.key),
+      el('div', { class: 'meta' },
+        el('span', { class: 'chip' }, s.category || s.source || 'local'),
+        (hit.final_score ? el('span', { class: 'chip ok' }, hit.final_score.toFixed(2)) : null),
+        s.one_line_summary || ''),
+    );
+    list.appendChild(item);
+  }
+  if (!State.skills.items.length) list.appendChild(el('div', { class: 'empty' }, '没有命中。'));
+  if (State.skills.selectedKey) renderSkillDetail(det, State.skills.selectedKey);
+  else det.appendChild(el('div', { class: 'empty' }, '左侧选一条技能查看详情。'));
+}
+async function renderSkillDetail(det, key) {
+  clear(det);
+  det.appendChild(el('div', { class: 'hd' }, el('h2', null, key)));
+  const body = el('div', { class: 'body markdown' });
+  det.appendChild(body);
+  try {
+    const data = await api('/v1/skills/' + encodeURIComponent(key));
+    body.appendChild(renderMD(data.body || ''));
+  } catch (e) {
+    body.appendChild(el('div', { class: 'empty' }, '加载失败'));
+  }
+}
+async function importByUrl() {
+  const url = prompt('输入技能 markdown URL:');
+  if (!url) return;
+  try {
+    await api('/v1/skills/import', { method: 'POST', body: { url } });
+    toast('导入成功', 'ok');
+    await loadLocalSkills();
+    renderSkillsTab();
+  } catch (e) {}
+}
+
+async function loadMarket(list, det) {
+  clear(det);
+  det.appendChild(el('div', { class: 'empty' }, '加载市场中…'));
+  try {
+    const q = new URLSearchParams();
+    if (State.skills.marketSource) q.set('source', State.skills.marketSource);
+    if (State.skills.marketLevel) q.set('level', State.skills.marketLevel);
+    if (State.skills.query) q.set('q', State.skills.query);
+    if (State.skills.marketPage > 1) q.set('page', State.skills.marketPage);
+    const data = await api('/v1/skills/market?' + q.toString());
+    // Re-render list (we already injected the toolbar above).
+    // Strip out non-toolbar children.
+    [...list.children].slice(1).forEach(c => c.remove());
+    for (const item of data.items || []) {
+      const card = el('button', {
+        class: 'item market-card' + (State.skills.marketSel === item.id ? ' selected' : ''),
+        onclick: () => { State.skills.marketSel = item.id; loadMarketDetail(det, item.id); }
+      },
+        el('div', { class: 'ttl' }, item.title),
+        el('div', { class: 'meta' },
+          el('span', { class: 'chip accent' }, item.level || ''),
+          el('span', { class: 'chip' }, item.source === 'official' ? '官方' : '社区'),
+          ` @${item.author} · ⭐ ${item.stars} · 💬 ${item.comments} · ${item.posted}`),
+        el('div', { class: 'preview' }, item.preview || ''),
+      );
+      list.appendChild(card);
+    }
+    // pagination
+    if ((data.pages || 1) > 1) {
+      const nav = el('div', { class: 'toolbar' });
+      if (data.page > 1) nav.appendChild(el('button', { class: 'ghost', onclick: () => { State.skills.marketPage = data.page - 1; loadMarket(list, det); } }, '« 上一页'));
+      nav.appendChild(el('span', { style: { padding: '0 8px', color: 'var(--muted)' } }, `第 ${data.page}/${data.pages} 页 · 共 ${data.total} 条`));
+      if (data.page < data.pages) nav.appendChild(el('button', { class: 'ghost', onclick: () => { State.skills.marketPage = data.page + 1; loadMarket(list, det); } }, '下一页 »'));
+      list.appendChild(nav);
+    }
+    clear(det);
+    det.appendChild(el('div', { class: 'empty' }, '左侧选一个技能。'));
+  } catch (e) {
+    clear(det);
+    det.appendChild(el('div', { class: 'empty' }, '市场加载失败：' + e.message));
+  }
+}
+
+async function loadMarketDetail(det, id) {
+  clear(det);
+  det.appendChild(el('div', { class: 'hd' },
+    el('h2', null, 'sophub: ' + id),
+    el('button', { class: 'primary', style: { 'margin-left': 'auto', padding: '4px 12px', background: 'var(--accent)', color: 'white', border: 0, 'border-radius': 'var(--radius)' },
+      onclick: async () => {
+        try {
+          const r = await api('/v1/skills/market/install', { method: 'POST', body: { id } });
+          toast('已安装到 ' + (r.path || '本地'), 'ok');
+          await loadLocalSkills();
+        } catch (e) {}
+      } }, '导入到本地')));
+  const body = el('div', { class: 'body markdown' });
+  det.appendChild(body);
+  body.appendChild(el('div', { class: 'empty' }, '加载中…'));
+  try {
+    const data = await api('/v1/skills/market/' + encodeURIComponent(id));
+    clear(body);
+    body.appendChild(renderMD(data.markdown || ''));
+  } catch (e) {
+    clear(body);
+    body.appendChild(el('div', { class: 'empty' }, '加载失败：' + e.message));
+  }
+}
+
+// =============== Modes tab ============
+async function renderModesTab() {
+  const list = document.getElementById('listCol');
+  const det = document.getElementById('detailCol');
+  clear(list); clear(det);
+  list.appendChild(el('div', { class: 'toolbar' },
+    el('button', { onclick: () => openCustomModeModal() }, '+ 自定义'),
+    el('span', { style: { flex: 1, color: 'var(--muted)', 'font-size': '11.5px', 'align-self': 'center', 'padding-left': '4px' } }, '存到 ~/.gars/modes/local/')));
+
+  await loadModes(true);
+  const modes = allModes();
+  for (const m of modes) {
+    const chip = m.source === 'builtin'
+      ? el('span', { class: 'chip' }, '内置')
+      : el('span', { class: 'chip warn' }, m.source || 'local');
+    list.appendChild(el('button', {
+      class: 'item' + (State.modes.selectedKey === m.key ? ' selected' : ''),
+      onclick: () => { State.modes.selectedKey = m.key; renderModesTab(); }
+    },
+      el('div', { class: 'ttl' }, m.label),
+      el('div', { class: 'meta' }, chip, (m.description || '').slice(0, 36) + (m.description && m.description.length > 36 ? '…' : ''))));
+  }
+
+  const sel = findMode(State.modes.selectedKey) || modes[0];
+  if (!sel) {
+    det.appendChild(el('div', { class: 'empty' }, '没有任何模式（builtin 应该会自动刷出）。'));
+    return;
+  }
+  det.appendChild(el('div', { class: 'hd' }, el('h2', null, sel.label)));
+  const body = el('div', { class: 'body' });
+  det.appendChild(body);
+  body.appendChild(el('div', { class: 'kv' },
+    el('div', { class: 'k' }, 'Key'), el('div', null, sel.key),
+    el('div', { class: 'k' }, 'Runner'), el('div', null, sel.runner_kind || ''),
+    el('div', { class: 'k' }, '来源'), el('div', null, sel.source || ''),
+    el('div', { class: 'k' }, '描述'), el('div', null, sel.description || ''),
+    el('div', { class: 'k' }, 'SOP keys'), el('div', null, (sel.sop_keys || []).join(', ') || '—'),
+    (sel.budget_secs != null ? el('div', { class: 'k' }, 'Budget') : null),
+    (sel.budget_secs != null ? el('div', null, sel.budget_secs + ' s') : null),
+    (sel.max_turns != null ? el('div', { class: 'k' }, 'Max turns') : null),
+    (sel.max_turns != null ? el('div', null, String(sel.max_turns)) : null),
+  ));
+  if (sel.source !== 'builtin') {
+    body.appendChild(el('button', {
+      style: { background: 'var(--danger)', color: 'white', border: 0, padding: '6px 14px', 'border-radius': 'var(--radius)', cursor: 'pointer', 'margin-top': '12px' },
+      onclick: async () => {
+        try {
+          await api('/v1/modes/' + encodeURIComponent(sel.key), { method: 'DELETE' });
+          State.modes.selectedKey = 'chat';
+          await loadModes(true);
+          renderModesTab();
+          toast('已删除', 'ok');
+        } catch (e) {}
+      }
+    }, '删除模式'));
+  }
+}
+
+function openCustomModeModal() {
+  const content = el('div');
+  content.appendChild(el('h3', null, '自定义模式'));
+  content.appendChild(el('label', null, 'Key (英文，唯一)'));
+  const key = el('input', { placeholder: 'my_workflow' });
+  content.appendChild(key);
+  content.appendChild(el('label', null, '名称'));
+  const lbl = el('input', { placeholder: '我的工作流' });
+  content.appendChild(lbl);
+  content.appendChild(el('label', null, 'runner_kind'));
+  const runner = el('select');
+  for (const r of ['chat', 'schedule', 'subagent', 'plan', 'goal']) runner.appendChild(el('option', { value: r }, r));
+  content.appendChild(runner);
+  content.appendChild(el('label', null, '描述'));
+  const desc = el('input');
+  content.appendChild(desc);
+  content.appendChild(el('label', null, 'sop_keys (英文逗号分隔，例：plan_sop)'));
+  const sops = el('input');
+  content.appendChild(sops);
+  content.appendChild(el('label', null, 'budget_secs (可空)'));
+  const bud = el('input', { type: 'number' });
+  content.appendChild(bud);
+  content.appendChild(el('div', { class: 'actions' },
+    el('button', { onclick: () => content._close(null) }, '取消'),
+    el('button', { class: 'primary', onclick: async () => {
+      const k = key.value.trim(); if (!k) return toast('key 不能为空', 'err');
+      const body = {
+        key: k,
+        label: lbl.value || k,
+        description: desc.value,
+        runner_kind: runner.value,
+        sop_keys: sops.value.split(',').map(s => s.trim()).filter(Boolean),
+        source: 'local',
+      };
+      const b = parseInt(bud.value); if (!isNaN(b) && b > 0) body.budget_secs = b;
+      try {
+        await api('/v1/modes', { method: 'POST', body });
+        content._close('ok');
+        State.modes.selectedKey = k;
+        await loadModes(true);
+        renderModesTab();
+      } catch (e) {}
+    } }, '保存')));
+  modal(content);
+}
+
+// =============== Settings tab ==========
+function renderSettingsTab() {
+  const list = document.getElementById('listCol');
+  const det = document.getElementById('detailCol');
+  clear(list); clear(det);
+  list.appendChild(el('div', { class: 'subtabs' },
+    ...[['llm', 'LLM'], ['ext', 'Chrome 扩展'], ['conn', '聊天工具'], ['about', '关于']].map(([k, lbl]) =>
+      el('button', { class: State.settings.sub === k ? 'active' : '', onclick: () => { State.settings.sub = k; renderSettingsTab(); } }, lbl))));
+  if (State.settings.sub === 'llm') renderSettingsLLM(det);
+  else if (State.settings.sub === 'ext') renderSettingsExt(det);
+  else if (State.settings.sub === 'conn') renderSettingsConnectors(det);
+  else renderSettingsAbout(det);
+}
+
+async function renderSettingsLLM(det) {
+  det.appendChild(el('div', { class: 'hd' }, el('h2', null, 'LLM 设置 (config.toml)')));
+  const body = el('div', { class: 'body config-edit' });
+  det.appendChild(body);
+  const ta = el('textarea', { spellcheck: 'false' });
+  body.appendChild(ta);
+  const saveBtn = el('button', {
+    style: { background: 'var(--accent)', color: 'white', border: 0, padding: '8px 16px', 'border-radius': 'var(--radius)', cursor: 'pointer', 'margin-top': '8px' },
+    onclick: async () => {
+      try {
+        await api('/v1/config', { method: 'PUT', headers: { 'Content-Type': 'application/toml' }, body: ta.value });
+        toast('已保存。可能需要重启服务生效。', 'ok');
+      } catch (e) {}
+    }
+  }, '保存');
+  body.appendChild(saveBtn);
+  try {
+    const r = await fetch('/v1/config', { headers: { 'Authorization': 'Bearer ' + getToken() } });
+    ta.value = await r.text();
+  } catch (e) { ta.value = '# 加载失败：' + e.message; }
+}
+
+async function renderSettingsExt(det) {
+  det.appendChild(el('div', { class: 'hd' }, el('h2', null, 'Chrome 扩展')));
+  const body = el('div', { class: 'body' });
+  det.appendChild(body);
+  const statusBox = el('div', { class: 'kv' });
+  body.appendChild(statusBox);
+  async function refreshExt() {
+    clear(statusBox);
+    try {
+      const s = await api('/v1/extension/state');
+      const connected = (s.connections || 0) > 0 || s.connected;
+      statusBox.appendChild(el('div', { class: 'k' }, '状态'));
+      statusBox.appendChild(el('div', null, el('span', { class: 'chip ' + (connected ? 'ok' : 'warn') }, connected ? '已连接' : '未连接')));
+      if (s.last_ping) {
+        statusBox.appendChild(el('div', { class: 'k' }, '最近 ping'));
+        statusBox.appendChild(el('div', null, formatTs(s.last_ping)));
+      }
+    } catch (e) {
+      statusBox.appendChild(el('div', null, '查询失败：' + e.message));
+    }
+  }
+  refreshExt();
+  body.appendChild(el('h3', null, '安装步骤'));
+  body.appendChild(el('div', { html:
+    '<ol>' +
+    '<li><a href="/ext/download/gars-extension.zip" download>下载扩展包</a> 并解压到本地目录</li>' +
+    '<li>访问 <code>chrome://extensions</code>，右上角打开 <b>开发者模式</b></li>' +
+    '<li>点击 <b>加载已解压的扩展程序</b>，选中刚才的目录</li>' +
+    '<li>在扩展弹窗里粘贴本机 admin token (顶部输入框那个)，点击 <b>连接</b></li>' +
+    '</ol>' }));
+  body.appendChild(el('button', {
+    style: { background: 'var(--accent)', color: 'white', border: 0, padding: '6px 14px', 'border-radius': 'var(--radius)', cursor: 'pointer' },
+    onclick: async () => {
+      const start = Date.now();
+      while (Date.now() - start < 60000) {
+        try {
+          const s = await api('/v1/extension/state');
+          if ((s.connections || 0) > 0 || s.connected) { toast('扩展已连接', 'ok'); refreshExt(); return; }
+        } catch (_) {}
+        await new Promise(r => setTimeout(r, 2000));
+      }
+      toast('等待超时（60s）', 'err');
+    }
+  }, '等待扩展连接 (60s)'));
+}
+
+async function renderSettingsConnectors(det) {
+  det.appendChild(el('div', { class: 'hd' }, el('h2', null, '聊天工具 connectors')));
+  const body = el('div', { class: 'body' });
+  det.appendChild(body);
+  try {
+    const data = await api('/v1/connectors');
+    const items = data.connectors || data || [];
+    if (!items.length) body.appendChild(el('div', { class: 'empty' }, '没有 connector。在 config.toml 的 [connectors] 段配置。'));
+    for (const c of items) {
+      const card = el('div', { class: 'kv', style: { 'border-bottom': '1px solid var(--line)', padding: '10px 0' } },
+        el('div', { class: 'k' }, c.id || ''),
+        el('div', null,
+          el('span', { class: 'chip ' + (c.status === 'running' ? 'ok' : 'warn') }, c.status || 'unknown'),
+          el('span', { style: { 'margin-left': '8px', color: 'var(--muted)' } }, c.last_error || ''),
+        ),
+        el('div', { class: 'k' }, '操作'),
+        el('div', null,
+          el('button', { class: 'ghost', style: { padding: '4px 10px' },
+            onclick: async () => {
+              try { await api('/v1/connectors/' + c.id + '/reload', { method: 'POST' }); toast('已重载', 'ok'); renderSettingsConnectors(det); } catch (_) {}
+            } }, '重载')));
+      body.appendChild(card);
+    }
+  } catch (e) { body.appendChild(el('div', null, '加载失败：' + e.message)); }
+}
+
+async function renderSettingsAbout(det) {
+  det.appendChild(el('div', { class: 'hd' }, el('h2', null, '关于')));
+  const body = el('div', { class: 'body' });
+  det.appendChild(body);
+  try {
+    const s = await api('/v1/status');
+    body.appendChild(el('div', { class: 'kv' },
+      el('div', { class: 'k' }, '版本'), el('div', null, s.version || '0.5.0'),
+      el('div', { class: 'k' }, '数据目录'), el('div', null, s.data_dir || ''),
+      el('div', { class: 'k' }, 'config'), el('div', null, s.config_path || ''),
+      el('div', { class: 'k' }, '运行端口'), el('div', null, (s.bind || '') + ':' + (s.port || '')),
+    ));
+  } catch (e) { body.appendChild(el('div', null, '加载失败：' + e.message)); }
+  body.appendChild(el('h3', null, '资源'));
+  body.appendChild(el('div', { html:
+    '<ul>' +
+    '<li><a href="https://github.com/uoox/gars" target="_blank">GitHub uoox/gars</a></li>' +
+    '<li><a href="/health" target="_blank">/health</a></li>' +
+    '<li><a href="/ext/download/gars-extension.zip" download>下载浏览器扩展</a></li>' +
+    '</ul>' }));
+}
+
+// =============== utils =================
+function formatTs(ts) {
+  if (!ts) return '';
+  try {
+    const d = typeof ts === 'number' ? new Date(ts * (ts < 1e12 ? 1000 : 1)) : new Date(ts);
+    return d.toLocaleString();
+  } catch (_) { return String(ts); }
+}
+
+// =============== WS bus ================
+function connectEvents() {
+  const token = getToken();
+  if (!token) return;
+  try {
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    const url = `${proto}://${location.host}/v1/events?token=${encodeURIComponent(token)}`;
+    const ws = new WebSocket(url);
+    State.ws = ws;
+    ws.onopen = () => setConnStatus(true);
+    ws.onclose = () => setConnStatus(false);
+    ws.onerror = () => setConnStatus(false);
+    ws.onmessage = (m) => {
+      try {
+        const ev = JSON.parse(m.data);
+        if (ev.topic && ev.topic.startsWith('task') && State.tab === 'tasks') {
+          refreshTasks().then(() => renderTasksTab());
+        }
+      } catch (_) {}
+    };
+  } catch (_) {}
+}
+function setConnStatus(ok) {
+  const c = document.getElementById('connStatus');
+  c.classList.toggle('connected', ok);
+  c.querySelector('.lbl').textContent = ok ? '已连接' : '未连接';
+}
+
+// =============== bootstrap =============
+document.getElementById('tokenInput').addEventListener('change', () => { connectEvents(); switchTab(State.tab); });
+loadToken();
+switchTab('tasks');
+connectEvents();
+// quick GET /health (no auth) to confirm reachability
+fetch('/health').then(r => setConnStatus(r.ok && !!getToken())).catch(() => setConnStatus(false));
+</script>
+</body>
+</html>

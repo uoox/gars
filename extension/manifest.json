@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "gars browser bridge",
+  "version": "0.4.0",
+  "description": "Lets the gars agent service drive this browser. Connects locally to 127.0.0.1.",
+  "permissions": ["tabs", "scripting", "activeTab", "storage", "alarms"],
+  "host_permissions": [
+    "http://127.0.0.1/*",
+    "ws://127.0.0.1/*",
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "gars",
+    "default_popup": "popup.html"
+  }
+}

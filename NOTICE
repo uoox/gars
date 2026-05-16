@@ -1,0 +1,13 @@
+gars is a Rust background service inspired by GenericAgent:
+https://github.com/lsdefine/GenericAgent
+
+The original GenericAgent project is licensed under the MIT License:
+Copyright (c) 2025 lsdefine
+
+This repository preserves the core design ideas, not the Python implementation:
+- a small reusable tool surface instead of many narrow tools
+- layered memory with minimal pointers and action-verified updates
+- token-frugal context management through compression, truncation, and anchors
+- self-improving SOPs and reflect/scheduler style autonomy
+
+No Python source files from the original project are copied into this repository.

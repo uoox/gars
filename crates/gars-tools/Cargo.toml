@@ -1,0 +1,32 @@
+[package]
+name = "gars-tools"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Built-in tool implementations for gars"
+
+[dependencies]
+anyhow.workspace = true
+async-trait.workspace = true
+base64.workspace = true
+chrono.workspace = true
+gars-archive = { path = "../gars-archive" }
+gars-cdp = { path = "../gars-cdp" }
+gars-core = { path = "../gars-core" }
+gars-extension = { path = "../gars-extension" }
+gars-memory = { path = "../gars-memory" }
+gars-osctl = { path = "../gars-osctl" }
+gars-skills = { path = "../gars-skills" }
+gars-store = { path = "../gars-store" }
+gars-vision = { path = "../gars-vision" }
+serde.workspace = true
+serde_json.workspace = true
+tempfile.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+walkdir.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

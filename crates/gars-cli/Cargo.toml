@@ -1,0 +1,42 @@
+[package]
+name = "gars-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "gars service binary and garstool interactive manager"
+autobins = false
+
+[[bin]]
+name = "gars"
+path = "src/bin/gars.rs"
+
+[[bin]]
+name = "garstool"
+path = "src/bin/garstool.rs"
+
+[dependencies]
+anyhow.workspace = true
+chrono.workspace = true
+clap.workspace = true
+dialoguer.workspace = true
+dirs.workspace = true
+gars-archive = { path = "../gars-archive" }
+gars-server = { path = "../gars-server" }
+gars-core = { path = "../gars-core" }
+gars-llm = { path = "../gars-llm" }
+gars-memory = { path = "../gars-memory" }
+gars-osctl = { path = "../gars-osctl" }
+gars-skills = { path = "../gars-skills" }
+gars-store = { path = "../gars-store" }
+gars-tools = { path = "../gars-tools" }
+gars-cdp = { path = "../gars-cdp" }
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+toml.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+uuid.workspace = true

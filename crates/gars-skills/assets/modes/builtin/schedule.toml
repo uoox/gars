@@ -1,0 +1,5 @@
+key = "schedule"
+label = "定时任务"
+description = "在指定时间或周期触发同一段 prompt。结果写到 ~/.gars/schedules/done/。"
+runner_kind = "schedule"
+sop_keys = ["scheduled_task_sop"]

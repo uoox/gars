@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body {
+        font-family: -apple-system, sans-serif;
+        width: 320px;
+        padding: 12px;
+        background: #13161c;
+        color: #e6e9ef;
+      }
+      h1 {
+        font-size: 16px;
+        margin: 0 0 8px;
+      }
+      label {
+        display: block;
+        font-size: 11px;
+        color: #9aa3b3;
+        margin-top: 8px;
+      }
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: 4px;
+        padding: 6px 8px;
+        background: #0b0d11;
+        border: 1px solid #2a2f3a;
+        color: #e6e9ef;
+        font-size: 12px;
+        border-radius: 4px;
+      }
+      button {
+        margin-top: 12px;
+        width: 100%;
+        padding: 8px;
+        background: #6ea8fe22;
+        border: 1px solid #6ea8fe55;
+        color: #6ea8fe;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .status {
+        font-size: 11px;
+        color: #9aa3b3;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>gars bridge</h1>
+    <label>Base URL</label>
+    <input id="base" placeholder="ws://127.0.0.1:9221" />
+    <label>Admin token</label>
+    <input id="token" type="password" placeholder="paste admin_token from ~/.gars/config.toml" />
+    <button id="save">save & reconnect</button>
+    <div class="status" id="status"></div>
+    <script src="popup.js"></script>
+  </body>
+</html>
