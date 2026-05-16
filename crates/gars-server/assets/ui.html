@@ -6,271 +6,661 @@
 <title>gars 控制台</title>
 <style>
 :root {
-  --bg: #0f1115;
-  --panel: #161a22;
-  --panel-2: #1d222c;
-  --line: #262d3a;
-  --fg: #d8dee9;
-  --muted: #8a93a6;
-  --accent: #4f8cff;
+  --bg: #f6f7fb;
+  --panel: #ffffff;
+  --panel-2: #f1f3f8;
+  --panel-3: #e7eaf2;
+  --line: #e2e6ee;
+  --line-strong: #cdd3df;
+  --fg: #1c2030;
+  --fg-2: #404656;
+  --muted: #757c8d;
+  --accent: #4a6cf7;
   --accent-2: #6ee7b7;
-  --warn: #f7c97e;
-  --danger: #ef6b6b;
-  --radius: 6px;
+  --accent-soft: #e3e9ff;
+  --warn: #f7b955;
+  --danger: #ef5b6b;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow-sm: 0 1px 2px rgba(20, 26, 51, .04), 0 1px 3px rgba(20, 26, 51, .04);
+  --shadow-md: 0 4px 10px rgba(20, 26, 51, .06), 0 2px 4px rgba(20, 26, 51, .04);
+  --shadow-lg: 0 16px 40px rgba(20, 26, 51, .14), 0 4px 12px rgba(20, 26, 51, .06);
 }
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: dark) {
   :root {
-    --bg: #f7f8fa; --panel: #fff; --panel-2: #f0f2f5; --line: #e1e4ea;
-    --fg: #1f2330; --muted: #61697a; --accent: #2a6df4;
+    --bg: #0e1117;
+    --panel: #161a23;
+    --panel-2: #1c2030;
+    --panel-3: #242938;
+    --line: #2a3142;
+    --line-strong: #3a4358;
+    --fg: #e6e9f1;
+    --fg-2: #c1c6d4;
+    --muted: #8a93a6;
+    --accent: #6c8aff;
+    --accent-soft: #1d2746;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.3);
+    --shadow-md: 0 4px 10px rgba(0,0,0,.4);
+    --shadow-lg: 0 16px 40px rgba(0,0,0,.5);
   }
 }
+
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body {
-  background: var(--bg); color: var(--fg);
-  font: 13.5px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+  background: var(--bg);
+  color: var(--fg);
+  font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
         "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
+
+button { font: inherit; }
+input, textarea, select { font: inherit; color: var(--fg); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── topbar ─────────────────────────────────── */
 header.topbar {
-  display: flex; align-items: center; gap: 12px;
-  height: 42px; padding: 0 14px;
-  background: var(--panel); border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 14px;
+  height: 52px; padding: 0 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+  position: relative; z-index: 10;
 }
-header .brand { font-weight: 600; letter-spacing: .3px; }
-header .brand b { color: var(--accent); }
-header input.token {
-  flex: 0 1 280px; min-width: 0; height: 26px; padding: 0 8px;
-  background: var(--panel-2); border: 1px solid var(--line); color: var(--fg);
-  border-radius: var(--radius); font-family: ui-monospace, monospace; font-size: 12px;
+header .logo {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-weight: 700; font-size: 16px; letter-spacing: .2px;
 }
+header .logo .dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+header .crumb {
+  color: var(--muted); font-size: 13px;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+header .crumb .sep { opacity: .4; }
+header .spacer { flex: 1; }
 header .conn {
-  display: inline-flex; align-items: center; gap: 6px; color: var(--muted);
-  font-size: 12px; margin-left: auto;
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--muted); font-size: 12px;
+  padding: 4px 10px; border-radius: 999px;
+  background: var(--panel-2); border: 1px solid var(--line);
 }
 header .conn .dot {
-  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
-  background: var(--muted);
+  width: 8px; height: 8px; border-radius: 50%; background: var(--muted);
 }
-header .conn.connected .dot { background: var(--accent-2); }
+header .conn.connected { color: var(--fg-2); }
+header .conn.connected .dot {
+  background: var(--accent-2); box-shadow: 0 0 0 3px rgba(110, 231, 183, .25);
+}
+header .settings-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--panel-2); border: 1px solid var(--line);
+  color: var(--fg-2); padding: 6px 12px; border-radius: 999px;
+  cursor: pointer; transition: background .15s;
+}
+header .settings-btn:hover { background: var(--panel-3); }
+header .settings-btn .gear { font-size: 15px; }
 
+/* ── main layout ─────────────────────────────── */
 main.layout {
-  display: grid; grid-template-columns: 180px 320px 1fr;
-  height: calc(100% - 42px);
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  height: calc(100% - 52px);
+  overflow: hidden;
 }
-@media (max-width: 1000px) {
-  main.layout { grid-template-columns: 140px 260px 1fr; }
-}
-nav.sidebar {
-  background: var(--panel); border-right: 1px solid var(--line);
-  padding: 10px 0;
-}
-nav.sidebar button {
-  display: block; width: 100%; text-align: left;
-  padding: 8px 16px; background: transparent; color: var(--fg);
-  border: 0; cursor: pointer; font-size: 13.5px;
-}
-nav.sidebar button:hover { background: var(--panel-2); }
-nav.sidebar button.active {
-  background: var(--panel-2); color: var(--accent); border-left: 2px solid var(--accent);
-  padding-left: 14px;
+@media (max-width: 900px) {
+  main.layout { grid-template-columns: 220px 1fr; }
 }
 
-section.list {
-  background: var(--panel); border-right: 1px solid var(--line);
-  overflow-y: auto;
-}
-section.list .toolbar {
-  position: sticky; top: 0; background: var(--panel);
-  display: flex; gap: 6px; padding: 8px; border-bottom: 1px solid var(--line);
-  z-index: 1;
-}
-section.list .toolbar input, section.list .toolbar select {
-  flex: 1; min-width: 0; height: 26px; padding: 0 6px;
-  background: var(--panel-2); border: 1px solid var(--line);
-  color: var(--fg); border-radius: var(--radius); font-size: 12.5px;
-}
-section.list .toolbar button {
-  height: 26px; padding: 0 10px; background: var(--accent); color: white;
-  border: 0; border-radius: var(--radius); cursor: pointer; font-size: 12.5px;
-}
-section.list .toolbar button.ghost {
-  background: var(--panel-2); color: var(--fg); border: 1px solid var(--line);
-}
-section.list .item {
-  display: block; width: 100%; text-align: left;
-  padding: 10px 12px; border: 0; background: transparent;
-  border-bottom: 1px solid var(--line); color: var(--fg);
-  cursor: pointer;
-}
-section.list .item:hover { background: var(--panel-2); }
-section.list .item.selected { background: var(--panel-2); }
-section.list .item .ttl { font-weight: 500; }
-section.list .item .meta { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
-.chip {
-  display: inline-block; padding: 1px 6px; border-radius: 10px;
-  background: var(--panel-2); border: 1px solid var(--line);
-  color: var(--muted); font-size: 11px; margin-right: 4px;
-}
-.chip.accent { color: var(--accent); border-color: var(--accent); }
-.chip.warn { color: var(--warn); border-color: var(--warn); }
-.chip.ok { color: var(--accent-2); border-color: var(--accent-2); }
-
-section.detail {
-  background: var(--bg); overflow-y: auto;
+/* ── tasks pane (left) ───────────────────────── */
+aside.tasks-pane {
+  background: var(--panel);
+  border-right: 1px solid var(--line);
   display: flex; flex-direction: column;
+  overflow: hidden;
 }
-section.detail .hd {
-  padding: 10px 16px; border-bottom: 1px solid var(--line);
-  display: flex; gap: 8px; align-items: center;
+aside .pane-header {
+  padding: 14px 14px 10px 14px;
+  border-bottom: 1px solid var(--line);
 }
-section.detail .hd h2 { margin: 0; font-size: 15px; font-weight: 600; }
-section.detail .body {
-  flex: 1; padding: 16px; overflow-y: auto;
+aside .pane-header h2 {
+  margin: 0 0 8px 0; font-size: 12px;
+  text-transform: uppercase; letter-spacing: .8px;
+  color: var(--muted); font-weight: 600;
 }
-section.detail .body.markdown { padding: 18px 24px; }
-.markdown h1, .markdown h2, .markdown h3 { margin-top: 1.2em; }
+aside .new-task-btn {
+  width: 100%; padding: 8px 12px;
+  background: var(--accent); color: white; border: 0;
+  border-radius: var(--radius-sm); cursor: pointer;
+  font-weight: 500; font-size: 13px;
+  box-shadow: var(--shadow-sm);
+  transition: transform .08s, box-shadow .15s;
+}
+aside .new-task-btn:hover { box-shadow: var(--shadow-md); }
+aside .new-task-btn:active { transform: scale(.98); }
+aside .search-wrap {
+  margin-top: 8px; position: relative;
+}
+aside .search-wrap input {
+  width: 100%; height: 30px; padding: 0 10px 0 28px;
+  background: var(--panel-2); border: 1px solid var(--line);
+  color: var(--fg); border-radius: var(--radius-sm); font-size: 13px;
+}
+aside .search-wrap input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+aside .search-wrap::before {
+  content: "⌕"; position: absolute; left: 10px; top: 6px;
+  color: var(--muted); font-size: 14px;
+}
+aside .task-list {
+  flex: 1; overflow-y: auto; padding: 6px;
+}
+aside .task-list .empty {
+  padding: 30px 16px; text-align: center; color: var(--muted); font-size: 12.5px;
+}
+aside .task-item {
+  display: block; width: 100%; text-align: left;
+  padding: 10px 12px; background: transparent; border: 0;
+  border-radius: var(--radius-sm); color: var(--fg-2);
+  cursor: pointer; margin-bottom: 2px;
+  transition: background .12s;
+}
+aside .task-item:hover { background: var(--panel-2); }
+aside .task-item.selected {
+  background: var(--accent-soft);
+  color: var(--fg);
+}
+aside .task-item .ttl {
+  font-weight: 500; font-size: 13px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+aside .task-item .meta {
+  font-size: 11.5px; color: var(--muted);
+  margin-top: 3px;
+  display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+}
+aside .new-chat-item {
+  margin: 4px 0 8px 0;
+}
+aside .new-chat-item.selected {
+  background: linear-gradient(135deg, var(--accent-soft), transparent);
+}
+
+.chip {
+  display: inline-flex; align-items: center;
+  padding: 1px 7px; border-radius: 999px;
+  background: var(--panel-3); color: var(--fg-2);
+  font-size: 10.5px; line-height: 1.4;
+  border: 1px solid transparent;
+}
+.chip.accent { background: var(--accent-soft); color: var(--accent); }
+.chip.ok { background: rgba(110, 231, 183, .18); color: #2c8b6a; border-color: rgba(110, 231, 183, .4); }
+.chip.warn { background: rgba(247, 185, 85, .18); color: #b27a25; border-color: rgba(247, 185, 85, .4); }
+.chip.danger { background: rgba(239, 91, 107, .14); color: var(--danger); border-color: rgba(239, 91, 107, .35); }
+@media (prefers-color-scheme: dark) {
+  .chip.ok { color: #6ee7b7; }
+  .chip.warn { color: #f7c97e; }
+}
+
+/* ── chat pane (right) ───────────────────────── */
+section.chat-pane {
+  display: flex; flex-direction: column;
+  background: var(--bg); overflow: hidden;
+}
+section.chat-pane .chat-header {
+  padding: 14px 24px; border-bottom: 1px solid var(--line);
+  background: var(--panel); display: flex; align-items: center; gap: 10px;
+}
+section.chat-pane .chat-header h2 {
+  margin: 0; font-size: 14.5px; font-weight: 600;
+}
+section.chat-pane .chat-header .meta {
+  color: var(--muted); font-size: 12px;
+  display: inline-flex; gap: 6px; align-items: center;
+}
+section.chat-pane .chat-stream {
+  flex: 1; overflow-y: auto;
+  padding: 22px 28px;
+}
+section.chat-pane .chat-stream .welcome {
+  max-width: 560px; margin: 60px auto;
+  text-align: center; color: var(--muted);
+}
+section.chat-pane .chat-stream .welcome h3 {
+  color: var(--fg); margin: 0 0 8px 0; font-weight: 600;
+}
+section.chat-pane .chat-stream .welcome p { margin: 6px 0; font-size: 13.5px; }
+
+.chat-msg {
+  max-width: 720px; margin: 0 0 20px 0;
+  animation: msgIn .2s ease-out;
+}
+@keyframes msgIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.chat-msg .role {
+  font-size: 11px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .6px;
+  margin-bottom: 4px; font-weight: 600;
+}
+.chat-msg.user { margin-left: auto; }
+.chat-msg.user .role { color: var(--accent); text-align: right; }
+.chat-msg .bubble {
+  background: var(--panel); border: 1px solid var(--line);
+  padding: 12px 16px; border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+}
+.chat-msg.user .bubble {
+  background: var(--accent); color: white;
+  border-color: transparent;
+}
+.chat-msg.user .bubble a { color: rgba(255,255,255,.9); text-decoration: underline; }
+.chat-msg.user .bubble code { background: rgba(255,255,255,.2); color: inherit; }
+
+/* markdown */
+.markdown { font-size: 13.5px; line-height: 1.65; }
+.markdown > *:first-child { margin-top: 0; }
+.markdown > *:last-child { margin-bottom: 0; }
+.markdown h1, .markdown h2, .markdown h3 {
+  margin: 1em 0 .5em; font-weight: 600;
+}
+.markdown h1 { font-size: 1.4em; } .markdown h2 { font-size: 1.2em; } .markdown h3 { font-size: 1.05em; }
+.markdown p { margin: .5em 0; }
 .markdown pre {
-  background: var(--panel); padding: 10px; border-radius: var(--radius);
-  overflow-x: auto;
+  background: var(--panel-2); padding: 12px 14px; border-radius: var(--radius-sm);
+  overflow-x: auto; font-size: 12.5px; margin: .6em 0;
+  border: 1px solid var(--line);
 }
 .markdown code {
-  background: var(--panel); padding: 1px 4px; border-radius: 3px;
-  font-family: ui-monospace, monospace; font-size: 12px;
+  background: var(--panel-2); padding: 1px 5px; border-radius: 4px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .92em;
 }
 .markdown pre code { padding: 0; background: transparent; }
-.markdown table { border-collapse: collapse; }
-.markdown td, .markdown th { border: 1px solid var(--line); padding: 4px 8px; }
-
-.chat-stream { flex: 1; overflow-y: auto; padding: 12px 16px; }
-.chat-msg { margin-bottom: 14px; }
-.chat-msg .role { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
-.chat-msg.user .role { color: var(--accent); }
-.chat-msg .markdown { background: var(--panel); padding: 10px 12px; border-radius: var(--radius); }
-.chat-msg.user .markdown { background: var(--panel-2); }
-.chat-input { display: flex; gap: 6px; padding: 10px 16px; border-top: 1px solid var(--line); background: var(--panel); }
-.chat-input textarea {
-  flex: 1; min-height: 50px; max-height: 180px; resize: vertical;
-  background: var(--panel-2); border: 1px solid var(--line); color: var(--fg);
-  padding: 8px; border-radius: var(--radius); font: inherit;
+.markdown table { border-collapse: collapse; margin: .5em 0; }
+.markdown td, .markdown th { border: 1px solid var(--line); padding: 5px 10px; }
+.markdown blockquote {
+  border-left: 3px solid var(--line-strong); padding-left: 12px;
+  color: var(--muted); margin: .5em 0;
 }
-.chat-input button {
-  align-self: flex-end; height: 30px; padding: 0 14px;
-  background: var(--accent); color: white; border: 0; border-radius: var(--radius);
-  cursor: pointer;
+.markdown ul, .markdown ol { padding-left: 1.6em; }
+
+/* ── chat composer ───────────────────────────── */
+.composer {
+  border-top: 1px solid var(--line);
+  background: var(--panel); padding: 14px 24px;
 }
+.composer .composer-shell {
+  max-width: 920px; margin: 0 auto;
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  display: flex; flex-direction: column;
+  transition: border-color .15s, box-shadow .15s;
+}
+.composer .composer-shell:focus-within {
+  border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.composer textarea {
+  background: transparent; border: 0; resize: none;
+  padding: 12px 14px; min-height: 56px; max-height: 200px;
+  outline: none; font: inherit; line-height: 1.5;
+}
+.composer .composer-foot {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 10px 8px 10px;
+  border-top: 1px solid var(--line);
+}
+.composer .composer-foot .left {
+  display: flex; align-items: center; gap: 6px; flex: 1;
+}
+.composer select.mode-sel {
+  background: transparent; border: 0; color: var(--muted);
+  padding: 4px 8px; cursor: pointer; font-size: 12.5px;
+}
+.composer select.mode-sel:hover { color: var(--fg); }
+.composer .hint {
+  color: var(--muted); font-size: 11.5px;
+}
+.composer button.send {
+  width: 36px; height: 32px; border: 0;
+  background: var(--accent); color: white;
+  border-radius: var(--radius-sm); cursor: pointer;
+  font-size: 16px; line-height: 1;
+  transition: transform .08s, opacity .15s;
+}
+.composer button.send:disabled { opacity: .5; cursor: not-allowed; }
+.composer button.send:active:not(:disabled) { transform: scale(.94); }
 
-.empty { padding: 40px 24px; color: var(--muted); text-align: center; }
-
-/* modal */
-.modal-backdrop {
-  position: fixed; inset: 0; background: rgba(0,0,0,.5);
+/* ── settings overlay ────────────────────────── */
+.settings-backdrop {
+  position: fixed; inset: 0; background: rgba(15, 18, 30, .45);
+  backdrop-filter: blur(2px);
   display: flex; align-items: center; justify-content: center;
-  z-index: 100;
+  z-index: 100; padding: 24px;
+  animation: fadeIn .15s ease-out;
 }
-.modal {
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.settings-backdrop.hidden { display: none; }
+.settings-panel {
+  background: var(--panel); border-radius: 14px;
+  width: 100%; max-width: 1040px; height: 100%; max-height: 780px;
+  box-shadow: var(--shadow-lg);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.settings-head {
+  display: flex; align-items: center; padding: 16px 22px;
+  border-bottom: 1px solid var(--line);
+}
+.settings-head h2 { margin: 0; font-size: 16px; font-weight: 600; }
+.settings-head .close {
+  margin-left: auto; background: transparent; border: 0;
+  font-size: 20px; line-height: 1; color: var(--muted);
+  cursor: pointer; padding: 4px 10px; border-radius: var(--radius-sm);
+}
+.settings-head .close:hover { background: var(--panel-2); color: var(--fg); }
+.settings-body {
+  display: grid; grid-template-columns: 200px 1fr;
+  flex: 1; overflow: hidden;
+}
+.settings-nav {
+  border-right: 1px solid var(--line);
+  padding: 12px 8px; overflow-y: auto;
+  background: var(--panel-2);
+}
+.settings-nav button {
+  display: block; width: 100%; text-align: left;
+  padding: 8px 14px; background: transparent; border: 0;
+  color: var(--fg-2); border-radius: var(--radius-sm); cursor: pointer;
+  margin-bottom: 2px; font-size: 13px;
+  transition: background .12s;
+}
+.settings-nav button:hover { background: var(--panel-3); }
+.settings-nav button.active { background: var(--accent); color: white; }
+.settings-content {
+  overflow-y: auto; padding: 22px 26px;
+}
+.settings-content h3 {
+  margin: 0 0 4px 0; font-size: 17px; font-weight: 600;
+}
+.settings-content .section-desc {
+  color: var(--muted); font-size: 12.5px; margin-bottom: 18px;
+}
+.settings-content h4 {
+  margin: 22px 0 8px 0; font-size: 13px;
+  font-weight: 600; color: var(--fg-2);
+  padding-bottom: 4px; border-bottom: 1px solid var(--line);
+}
+
+/* form */
+.field {
+  margin: 14px 0;
+  display: grid; grid-template-columns: 160px 1fr;
+  gap: 10px; align-items: start;
+}
+.field > label {
+  padding-top: 6px; color: var(--fg-2); font-size: 13px;
+}
+.field > .input-wrap input,
+.field > .input-wrap textarea,
+.field > .input-wrap select {
+  width: 100%; padding: 7px 10px;
+  background: var(--panel-2); border: 1px solid var(--line);
+  color: var(--fg); border-radius: var(--radius-sm); font: inherit;
+  outline: none; transition: border-color .12s;
+}
+.field > .input-wrap input:focus,
+.field > .input-wrap textarea:focus,
+.field > .input-wrap select:focus { border-color: var(--accent); }
+.field > .input-wrap textarea { min-height: 80px; resize: vertical; }
+.field > .input-wrap .hint {
+  color: var(--muted); font-size: 11.5px; margin-top: 4px;
+}
+.actions-row {
+  display: flex; gap: 8px; margin-top: 18px;
+  padding-top: 14px; border-top: 1px solid var(--line);
+}
+.btn {
+  padding: 7px 16px; background: var(--panel-2); border: 1px solid var(--line);
+  color: var(--fg); border-radius: var(--radius-sm); cursor: pointer;
+  font-size: 13px;
+}
+.btn:hover { background: var(--panel-3); }
+.btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { background: var(--danger); color: white; border-color: var(--danger); }
+
+.toggle {
+  display: inline-flex; align-items: center; gap: 8px;
+  cursor: pointer; user-select: none;
+}
+.toggle input { display: none; }
+.toggle .track {
+  width: 36px; height: 20px; background: var(--panel-3);
+  border-radius: 999px; position: relative; transition: background .12s;
+}
+.toggle .track::after {
+  content: ""; position: absolute; top: 2px; left: 2px;
+  width: 16px; height: 16px; background: white; border-radius: 50%;
+  transition: transform .15s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.toggle input:checked + .track { background: var(--accent); }
+.toggle input:checked + .track::after { transform: translateX(16px); }
+
+/* settings list (modes / skills) */
+.entry-grid {
+  display: grid; grid-template-columns: 260px 1fr; gap: 0;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  overflow: hidden; height: 460px;
+}
+.entry-list {
+  border-right: 1px solid var(--line); overflow-y: auto;
+  background: var(--panel-2);
+}
+.entry-list .toolbar {
+  padding: 8px; border-bottom: 1px solid var(--line);
+  display: flex; gap: 6px;
+}
+.entry-list .toolbar input, .entry-list .toolbar select {
+  flex: 1; min-width: 0; padding: 5px 8px;
   background: var(--panel); border: 1px solid var(--line);
-  border-radius: var(--radius); width: 520px; max-width: 92vw;
-  max-height: 90vh; overflow-y: auto; padding: 18px 20px;
+  color: var(--fg); border-radius: var(--radius-sm); font-size: 12.5px;
 }
-.modal h3 { margin: 0 0 12px 0; font-size: 16px; }
-.modal label { display: block; margin: 10px 0 4px 0; font-size: 12.5px; color: var(--muted); }
-.modal input, .modal textarea, .modal select {
-  width: 100%; background: var(--panel-2); border: 1px solid var(--line);
-  color: var(--fg); padding: 6px 8px; border-radius: var(--radius); font: inherit;
+.entry-list .toolbar button {
+  padding: 4px 10px; background: var(--accent); color: white;
+  border: 0; border-radius: var(--radius-sm); cursor: pointer; font-size: 12.5px;
 }
-.modal textarea { min-height: 80px; resize: vertical; }
-.modal .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
-.modal .actions button {
-  padding: 6px 14px; border: 1px solid var(--line); background: var(--panel-2);
-  color: var(--fg); border-radius: var(--radius); cursor: pointer;
+.entry-list .toolbar button.ghost {
+  background: var(--panel); color: var(--fg); border: 1px solid var(--line);
 }
-.modal .actions button.primary { background: var(--accent); color: white; border-color: var(--accent); }
-
-.modal .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.modal .hint { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
-
-/* toast */
-.toast-host { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 200; }
-.toast { background: var(--panel); border: 1px solid var(--line); padding: 8px 12px; border-radius: var(--radius); font-size: 12.5px; max-width: 360px; }
-.toast.err { border-color: var(--danger); color: var(--danger); }
-.toast.ok { border-color: var(--accent-2); color: var(--accent-2); }
-
-/* tabs (sub-tabs in settings) */
-.subtabs { display: flex; gap: 4px; padding: 8px; border-bottom: 1px solid var(--line); }
-.subtabs button {
-  padding: 4px 10px; background: var(--panel-2); border: 1px solid var(--line);
-  color: var(--fg); border-radius: var(--radius); cursor: pointer; font-size: 12.5px;
+.entry-item {
+  display: block; width: 100%; text-align: left;
+  padding: 9px 12px; background: transparent; border: 0;
+  border-bottom: 1px solid var(--line); color: var(--fg);
+  cursor: pointer; font-size: 12.5px;
 }
-.subtabs button.active { background: var(--accent); color: white; border-color: var(--accent); }
-
-.config-edit textarea {
-  width: 100%; min-height: 360px; resize: vertical; padding: 10px;
-  background: var(--panel); border: 1px solid var(--line); color: var(--fg);
-  font-family: ui-monospace, monospace; font-size: 12.5px; border-radius: var(--radius);
+.entry-item:hover { background: var(--panel-3); }
+.entry-item.selected { background: var(--accent-soft); }
+.entry-item .ttl { font-weight: 500; }
+.entry-item .meta { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.entry-detail {
+  overflow-y: auto; padding: 18px 20px;
 }
+.entry-detail .empty {
+  text-align: center; color: var(--muted); padding: 40px 20px; font-size: 12.5px;
+}
+.kv {
+  display: grid; grid-template-columns: 120px 1fr;
+  gap: 4px 12px; margin: 8px 0;
+}
+.kv .k { color: var(--muted); font-size: 12.5px; }
+.kv > div:nth-child(even) { font-size: 13px; word-break: break-word; }
 
-.market-card { cursor: pointer; }
+/* market */
 .market-card .preview {
   color: var(--muted); font-size: 11.5px; margin-top: 4px;
   overflow: hidden; text-overflow: ellipsis;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
 }
 
-.kv { display: grid; grid-template-columns: 130px 1fr; gap: 4px 12px; margin: 6px 0; }
-.kv .k { color: var(--muted); }
+/* config raw editor */
+.config-raw textarea {
+  width: 100%; min-height: 360px; max-height: 60vh; resize: vertical;
+  padding: 10px 12px;
+  background: var(--panel-2); border: 1px solid var(--line); color: var(--fg);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px;
+  border-radius: var(--radius-sm); outline: none;
+}
+.config-raw textarea:focus { border-color: var(--accent); }
+
+/* generic modal (new task) */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(15, 18, 30, .45);
+  backdrop-filter: blur(2px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200; padding: 20px;
+  animation: fadeIn .15s ease-out;
+}
+.modal {
+  background: var(--panel); border-radius: var(--radius);
+  width: 560px; max-width: 100%; max-height: 86vh; overflow-y: auto;
+  padding: 22px 24px; box-shadow: var(--shadow-lg);
+}
+.modal h3 { margin: 0 0 4px 0; font-size: 16px; }
+.modal .modal-desc { color: var(--muted); font-size: 12.5px; margin-bottom: 14px; }
+.modal label { display: block; margin: 10px 0 4px 0; font-size: 12.5px; color: var(--fg-2); }
+.modal input, .modal textarea, .modal select {
+  width: 100%; background: var(--panel-2); border: 1px solid var(--line);
+  color: var(--fg); padding: 7px 10px; border-radius: var(--radius-sm); font: inherit;
+  outline: none;
+}
+.modal input:focus, .modal textarea:focus, .modal select:focus { border-color: var(--accent); }
+.modal textarea { min-height: 80px; resize: vertical; }
+.modal .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+.modal .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.modal .hint { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+
+/* toasts */
+.toast-host {
+  position: fixed; right: 16px; bottom: 16px;
+  display: flex; flex-direction: column; gap: 8px; z-index: 500;
+}
+.toast {
+  background: var(--panel); border: 1px solid var(--line);
+  padding: 9px 14px; border-radius: var(--radius-sm);
+  font-size: 12.5px; max-width: 360px;
+  box-shadow: var(--shadow-md);
+  transition: opacity .3s;
+}
+.toast.err { border-color: var(--danger); color: var(--danger); }
+.toast.ok { border-color: var(--accent-2); color: #2c8b6a; }
+@media (prefers-color-scheme: dark) {
+  .toast.ok { color: var(--accent-2); }
+}
+
+/* utility */
+.empty { color: var(--muted); text-align: center; padding: 40px 20px; font-size: 12.5px; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+::-webkit-scrollbar-track { background: transparent; }
 </style>
 </head>
 <body>
 
 <header class="topbar">
-  <span class="brand"><b>gars</b> 控制台</span>
-  <input class="token" id="tokenInput" placeholder="admin token (从 ~/.gars/config.toml 拷贝)" />
+  <span class="logo"><span class="dot"></span>gars</span>
+  <span class="crumb" id="crumb"></span>
+  <span class="spacer"></span>
   <span class="conn" id="connStatus"><span class="dot"></span><span class="lbl">未连接</span></span>
+  <button class="settings-btn" id="settingsBtn" title="设置">
+    <span class="gear">⚙</span><span>设置</span>
+  </button>
 </header>
 
 <main class="layout">
-  <nav class="sidebar">
-    <button data-tab="tasks" class="active">📋 任务列表</button>
-    <button data-tab="skills">📚 技能管理</button>
-    <button data-tab="modes">⚙️ 模式管理</button>
-    <button data-tab="settings">🛠 设置</button>
-  </nav>
-  <section class="list" id="listCol"></section>
-  <section class="detail" id="detailCol"></section>
+  <aside class="tasks-pane">
+    <div class="pane-header">
+      <h2>任务</h2>
+      <button class="new-task-btn" id="newTaskBtn">＋ 新建任务</button>
+      <div class="search-wrap">
+        <input id="taskSearch" placeholder="搜索任务..." />
+      </div>
+    </div>
+    <div class="task-list" id="taskList"></div>
+  </aside>
+  <section class="chat-pane">
+    <div class="chat-header" id="chatHeader"></div>
+    <div class="chat-stream" id="chatStream"></div>
+    <div class="composer">
+      <div class="composer-shell">
+        <textarea id="composerInput" placeholder="向 gars 提问，Enter 发送 / Shift+Enter 换行"></textarea>
+        <div class="composer-foot">
+          <div class="left">
+            <select class="mode-sel" id="composerMode" title="选择运行模式"></select>
+            <span class="hint" id="composerHint"></span>
+          </div>
+          <button class="send" id="sendBtn" title="发送 (Enter)">↑</button>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
+
+<!-- Settings overlay -->
+<div class="settings-backdrop hidden" id="settingsBackdrop">
+  <div class="settings-panel" role="dialog" aria-modal="true">
+    <div class="settings-head">
+      <h2>设置</h2>
+      <button class="close" id="settingsClose" title="关闭">×</button>
+    </div>
+    <div class="settings-body">
+      <nav class="settings-nav" id="settingsNav"></nav>
+      <div class="settings-content" id="settingsContent"></div>
+    </div>
+  </div>
+</div>
 
 <div class="toast-host" id="toasts"></div>
 
-<!-- markdown-it + highlight.js via CDN. Failure to load is fine — fallback to <pre>. -->
 <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/lib/index.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/styles/github-dark.min.css" />
 
 <script>
-// =============== state =================
+// ╔════════════════════════════════════════════╗
+// ║              state                         ║
+// ╚════════════════════════════════════════════╝
 const State = {
-  tab: 'tasks',
   tasks: [],
-  selectedTaskId: null,
-  skills: { mode: 'local', items: [], query: '', selectedKey: null, marketSel: null, marketPage: 1, marketSource: '', marketLevel: '' },
-  modes: { selectedKey: 'chat', list: [], loaded: false },
-  settings: { sub: 'llm' },
+  taskFilter: '',
+  currentTaskId: null,
+  /* 'chat': transient ad-hoc chat in right pane (no task selected) */
+  chatHistory: [],
+  modes: { list: [], loaded: false },
+  composerMode: 'chat',
   ws: null,
+  settings: {
+    open: false,
+    sub: 'general',
+    skills: { mode: 'local', items: [], query: '', selectedKey: null, marketSel: null, marketPage: 1, marketSource: '', marketLevel: '' },
+    modesSel: null,
+  },
 };
 const TOKEN_KEY = 'gars.adminToken';
 
+// ╔════════════════════════════════════════════╗
+// ║              API helpers                   ║
+// ╚════════════════════════════════════════════╝
 function getToken() {
-  const t = document.getElementById('tokenInput').value.trim();
+  return localStorage.getItem(TOKEN_KEY) || '';
+}
+function setToken(t) {
   if (t) localStorage.setItem(TOKEN_KEY, t);
-  return t;
+  else localStorage.removeItem(TOKEN_KEY);
 }
-function loadToken() {
-  const t = localStorage.getItem(TOKEN_KEY) || '';
-  document.getElementById('tokenInput').value = t;
-  return t;
-}
-
-// =============== API ===================
 async function api(path, opts = {}) {
   const token = getToken();
   const headers = Object.assign({}, opts.headers || {});
@@ -291,42 +681,45 @@ async function api(path, opts = {}) {
   return await res.text();
 }
 
-// =============== UI helpers ============
+// ╔════════════════════════════════════════════╗
+// ║              DOM helpers                   ║
+// ╚════════════════════════════════════════════╝
 function el(tag, attrs, ...children) {
   const e = document.createElement(tag);
-  if (attrs) {
-    for (const k in attrs) {
-      if (k === 'class') e.className = attrs[k];
-      else if (k === 'style' && typeof attrs[k] === 'object') Object.assign(e.style, attrs[k]);
-      else if (k.startsWith('on') && typeof attrs[k] === 'function') e.addEventListener(k.slice(2).toLowerCase(), attrs[k]);
-      else if (k === 'html') e.innerHTML = attrs[k];
-      else e.setAttribute(k, attrs[k]);
-    }
+  if (attrs) for (const k in attrs) {
+    if (k === 'class') e.className = attrs[k];
+    else if (k === 'style' && typeof attrs[k] === 'object') Object.assign(e.style, attrs[k]);
+    else if (k.startsWith('on') && typeof attrs[k] === 'function') e.addEventListener(k.slice(2).toLowerCase(), attrs[k]);
+    else if (k === 'html') e.innerHTML = attrs[k];
+    else if (attrs[k] === null || attrs[k] === undefined || attrs[k] === false) {}
+    else if (attrs[k] === true) e.setAttribute(k, '');
+    else e.setAttribute(k, attrs[k]);
   }
   for (const c of children) {
-    if (c === null || c === undefined) continue;
-    if (typeof c === 'string') e.appendChild(document.createTextNode(c));
+    if (c === null || c === undefined || c === false) continue;
+    if (Array.isArray(c)) c.forEach(x => x && e.appendChild(typeof x === 'string' ? document.createTextNode(x) : x));
+    else if (typeof c === 'string' || typeof c === 'number') e.appendChild(document.createTextNode(String(c)));
     else e.appendChild(c);
   }
   return e;
 }
 function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
 
-let md = null;
+let _md = null;
 function getMD() {
-  if (md) return md;
+  if (_md) return _md;
   if (typeof window.markdownit === 'function') {
-    md = window.markdownit({
+    _md = window.markdownit({
       html: false, linkify: true, breaks: false,
       highlight: function (str, lang) {
-        if (typeof window.hljs !== 'undefined' && lang && window.hljs.getLanguage(lang)) {
+        if (window.hljs && lang && window.hljs.getLanguage(lang)) {
           try { return window.hljs.highlight(str, { language: lang }).value; } catch (_) {}
         }
         return '';
       },
     });
   }
-  return md;
+  return _md;
 }
 function renderMD(text) {
   const m = getMD();
@@ -335,14 +728,16 @@ function renderMD(text) {
     div.innerHTML = m.render(text || '');
     return div;
   }
-  return el('pre', { class: 'markdown' }, text || '');
+  const pre = el('pre', { class: 'markdown' });
+  pre.textContent = text || '';
+  return pre;
 }
 
 function toast(msg, kind) {
   const host = document.getElementById('toasts');
   const t = el('div', { class: 'toast ' + (kind || '') }, msg);
   host.appendChild(t);
-  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 400); }, 4000);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 350); }, 4000);
 }
 
 function modal(content) {
@@ -359,41 +754,32 @@ function modal(content) {
   });
 }
 
-// =============== modes =================
-// Modes are loaded from the backend (~/.gars/modes/{builtin,local}/<key>.toml).
-// Frontend caches the list in State.modes.list. Each mode has fields:
-//   { key, label, description, runner_kind, sop_keys, allowed_tools,
-//     budget_secs, max_turns, source }
-// `source` is 'builtin' | 'local' | 'imported'.
-// Front-end maps runner_kind → REST endpoint to call when the user submits
-// "新建任务".
+function formatTs(ts) {
+  if (!ts) return '';
+  try {
+    const d = typeof ts === 'number' ? new Date(ts * (ts < 1e12 ? 1000 : 1)) : new Date(ts);
+    return d.toLocaleString();
+  } catch (_) { return String(ts); }
+}
+
+// ╔════════════════════════════════════════════╗
+// ║              modes registry                ║
+// ╚════════════════════════════════════════════╝
 async function loadModes(force) {
   if (State.modes.loaded && !force) return State.modes.list;
   try {
     const data = await api('/v1/modes');
     State.modes.list = data.modes || [];
-    State.modes.loaded = true;
   } catch (e) { State.modes.list = []; }
+  State.modes.loaded = true;
   return State.modes.list;
 }
 function allModes() { return State.modes.list || []; }
 function findMode(key) { return allModes().find(m => m.key === key); }
-function modeDesc(m) { return m ? (m.description || '') : ''; }
 
-// =============== tab routing ===========
-document.querySelectorAll('nav.sidebar button').forEach(btn => {
-  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-});
-function switchTab(tab) {
-  State.tab = tab;
-  document.querySelectorAll('nav.sidebar button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  if (tab === 'tasks') renderTasksTab();
-  else if (tab === 'skills') renderSkillsTab();
-  else if (tab === 'modes') renderModesTab();
-  else if (tab === 'settings') renderSettingsTab();
-}
-
-// =============== Tasks tab =============
+// ╔════════════════════════════════════════════╗
+// ║              task list (left)              ║
+// ╚════════════════════════════════════════════╝
 async function refreshTasks() {
   try {
     const data = await api('/v1/tasks?limit=50');
@@ -401,143 +787,236 @@ async function refreshTasks() {
   } catch (e) { State.tasks = []; }
 }
 
-function renderTasksTab() {
-  const list = document.getElementById('listCol');
-  const det = document.getElementById('detailCol');
-  clear(list); clear(det);
+function renderTaskList() {
+  const host = document.getElementById('taskList');
+  clear(host);
 
-  list.appendChild(el('div', { class: 'toolbar' },
-    el('button', { onclick: () => openNewTaskModal() }, '+ 新建任务'),
-    el('button', { class: 'ghost', onclick: async () => { await refreshTasks(); renderTasksTab(); } }, '⟳'),
-  ));
+  // "新对话" pseudo-item to switch back to ad-hoc chat
+  const newChat = el('button', {
+    class: 'task-item new-chat-item' + (State.currentTaskId === null ? ' selected' : ''),
+    onclick: () => { State.currentTaskId = null; renderTaskList(); renderChatPane(); },
+  },
+    el('div', { class: 'ttl' }, '💬 新对话'),
+    el('div', { class: 'meta' }, '直接和 gars 聊天'),
+  );
+  host.appendChild(newChat);
 
-  refreshTasks().then(() => {
-    clear(list);
-    list.appendChild(el('div', { class: 'toolbar' },
-      el('button', { onclick: () => openNewTaskModal() }, '+ 新建任务'),
-      el('button', { class: 'ghost', onclick: async () => { await refreshTasks(); renderTasksTab(); } }, '⟳'),
+  const q = State.taskFilter.trim().toLowerCase();
+  const filtered = q
+    ? State.tasks.filter(t => ((t.title || t.prompt || t.id) + ' ' + (t.mode || '')).toLowerCase().includes(q))
+    : State.tasks;
+
+  if (!filtered.length) {
+    host.appendChild(el('div', { class: 'empty' }, q ? '没找到匹配。' : '还没有任务。点击「＋ 新建任务」开始。'));
+    return;
+  }
+  for (const t of filtered) {
+    const status = t.status || '';
+    const chipKind =
+      status === 'done' || status === 'succeeded' ? 'ok' :
+      status === 'failed' || status === 'error' ? 'danger' :
+      status === 'running' ? 'accent' :
+      status ? 'warn' : '';
+    host.appendChild(el('button', {
+      class: 'task-item' + (State.currentTaskId === t.id ? ' selected' : ''),
+      onclick: () => { State.currentTaskId = t.id; renderTaskList(); renderChatPane(); },
+    },
+      el('div', { class: 'ttl' }, t.title || t.prompt || t.id),
+      el('div', { class: 'meta' },
+        t.mode ? el('span', { class: 'chip accent' }, t.mode) : null,
+        status ? el('span', { class: 'chip ' + chipKind }, status) : null,
+        el('span', null, formatTs(t.created_at || t.createdAt)),
+      ),
     ));
-    if (!State.tasks.length) {
-      list.appendChild(el('div', { class: 'empty' }, '还没有任务。点击「+ 新建任务」开始。'));
-    } else {
-      for (const t of State.tasks) {
-        const item = el('button', {
-          class: 'item' + (State.selectedTaskId === t.id ? ' selected' : ''),
-          onclick: () => { State.selectedTaskId = t.id; renderTasksTab(); },
-        },
-          el('div', { class: 'ttl' }, t.title || t.prompt || t.id),
-          el('div', { class: 'meta' },
-            el('span', { class: 'chip accent' }, t.mode || '普通'),
-            el('span', { class: 'chip' }, t.status || ''),
-            ' ', formatTs(t.created_at || t.createdAt))
-        );
-        list.appendChild(item);
-      }
-    }
-  });
+  }
+}
 
-  if (!State.selectedTaskId) {
-    det.appendChild(el('div', { class: 'hd' }, el('h2', null, '聊天')));
-    det.appendChild(buildChatPanel());
+// ╔════════════════════════════════════════════╗
+// ║              chat pane (right)             ║
+// ╚════════════════════════════════════════════╝
+function renderChatPane() {
+  renderCrumb();
+  if (State.currentTaskId === null) {
+    renderChatHeader('新对话', '直接聊天 — 选择左侧已有任务可恢复其上下文');
+    renderTransientChat();
   } else {
-    renderTaskDetail(State.selectedTaskId, det);
+    renderTaskDetail(State.currentTaskId);
   }
 }
 
-function buildChatPanel() {
-  const wrap = el('div', { class: 'body', style: { padding: 0, display: 'flex', 'flex-direction': 'column', flex: '1' } });
-  const stream = el('div', { class: 'chat-stream' });
-  const input = el('textarea', { placeholder: '输入消息，Cmd/Ctrl+Enter 发送...' });
-  const sendBtn = el('button', { onclick: () => send() }, '发送');
-  input.addEventListener('keydown', (ev) => {
-    if ((ev.metaKey || ev.ctrlKey) && ev.key === 'Enter') { ev.preventDefault(); send(); }
-  });
-  async function send() {
-    const txt = input.value.trim();
-    if (!txt) return;
-    stream.appendChild(el('div', { class: 'chat-msg user' },
-      el('div', { class: 'role' }, '你'), renderMD(txt)));
-    input.value = '';
-    const replyHost = el('div', { class: 'chat-msg' },
-      el('div', { class: 'role' }, 'gars'),
-      renderMD('思考中…'));
-    stream.appendChild(replyHost);
-    stream.scrollTop = stream.scrollHeight;
-    try {
-      const resp = await fetch('/v1/chat/stream', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
-        body: JSON.stringify({ message: txt, stream: true }),
-      });
-      if (!resp.ok || !resp.body) {
-        const err = await resp.text();
-        replyHost.replaceChild(renderMD('请求失败: ' + err), replyHost.lastChild);
-        return;
-      }
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = '', full = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        let idx;
-        while ((idx = buf.indexOf('\n\n')) >= 0) {
-          const ev = buf.slice(0, idx);
-          buf = buf.slice(idx + 2);
-          for (const line of ev.split('\n')) {
-            if (line.startsWith('data:')) {
-              try {
-                const j = JSON.parse(line.slice(5).trim());
-                if (j.delta) full += j.delta;
-                else if (j.text) full += j.text;
-                else if (j.done) {}
-              } catch (_) {}
-            }
-          }
-          replyHost.replaceChild(renderMD(full || '…'), replyHost.lastChild);
-          stream.scrollTop = stream.scrollHeight;
-        }
-      }
-    } catch (e) {
-      replyHost.replaceChild(renderMD('错误: ' + e.message), replyHost.lastChild);
+function renderCrumb() {
+  const c = document.getElementById('crumb');
+  clear(c);
+  if (State.currentTaskId === null) {
+    c.appendChild(el('span', null, '· 新对话'));
+  } else {
+    const t = State.tasks.find(x => x.id === State.currentTaskId);
+    if (t) {
+      c.appendChild(el('span', { class: 'sep' }, '·'));
+      c.appendChild(el('span', null, t.title || t.prompt || t.id));
     }
   }
-  const bar = el('div', { class: 'chat-input' }, input, sendBtn);
-  wrap.appendChild(stream); wrap.appendChild(bar);
-  return wrap;
 }
 
-async function renderTaskDetail(id, det) {
-  det.appendChild(el('div', { class: 'hd' }, el('h2', null, '任务 ' + id)));
-  const body = el('div', { class: 'body' });
-  det.appendChild(body);
+function renderChatHeader(title, sub) {
+  const h = document.getElementById('chatHeader');
+  clear(h);
+  h.appendChild(el('h2', null, title));
+  if (sub) h.appendChild(el('span', { class: 'meta' }, '·', sub));
+}
+
+function renderTransientChat() {
+  const stream = document.getElementById('chatStream');
+  clear(stream);
+  if (!State.chatHistory.length) {
+    stream.appendChild(el('div', { class: 'welcome' },
+      el('h3', null, '欢迎使用 gars'),
+      el('p', null, '在下面输入框中提问，或点击左侧「＋ 新建任务」创建定时任务、规划任务等。'),
+      el('p', null, '调整运行模式：在底部下拉里选 chat / plan / goal 等。'),
+    ));
+    return;
+  }
+  for (const m of State.chatHistory) appendChatMsg(stream, m.role, m.content);
+}
+
+function appendChatMsg(stream, role, content) {
+  const msg = el('div', { class: 'chat-msg ' + (role === 'user' ? 'user' : '') });
+  msg.appendChild(el('div', { class: 'role' }, role === 'user' ? '你' : 'gars'));
+  const bubble = el('div', { class: 'bubble' });
+  bubble.appendChild(renderMD(content));
+  msg.appendChild(bubble);
+  stream.appendChild(msg);
+  stream.scrollTop = stream.scrollHeight;
+  return bubble;
+}
+
+async function sendComposerMessage() {
+  const ta = document.getElementById('composerInput');
+  const text = ta.value.trim();
+  if (!text) return;
+  const mode = State.composerMode || 'chat';
+  const modeDef = findMode(mode);
+
+  // Non-chat modes go through "+ 新建任务" modal pre-filled so users can review parameters
+  if (modeDef && modeDef.runner_kind !== 'chat') {
+    ta.value = '';
+    openNewTaskModal(mode, text);
+    return;
+  }
+
+  ta.value = '';
+  const stream = document.getElementById('chatStream');
+  // Wipe welcome before first message
+  if (!State.chatHistory.length) clear(stream);
+
+  State.chatHistory.push({ role: 'user', content: text });
+  appendChatMsg(stream, 'user', text);
+
+  const placeholder = appendChatMsg(stream, 'gars', '思考中…');
+  let full = '';
   try {
-    const t = await api('/v1/tasks/' + id);
-    body.appendChild(el('div', { class: 'kv' },
+    const resp = await fetch('/v1/chat/stream', {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' },
+        getToken() ? { 'Authorization': 'Bearer ' + getToken() } : {}),
+      body: JSON.stringify({ message: text, stream: true, mode }),
+    });
+    if (!resp.ok || !resp.body) {
+      const err = await resp.text();
+      placeholder.innerHTML = ''; placeholder.appendChild(renderMD('请求失败: ' + err));
+      return;
+    }
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let idx;
+      while ((idx = buf.indexOf('\n\n')) >= 0) {
+        const ev = buf.slice(0, idx);
+        buf = buf.slice(idx + 2);
+        for (const line of ev.split('\n')) {
+          if (line.startsWith('data:')) {
+            try {
+              const j = JSON.parse(line.slice(5).trim());
+              if (j.delta) full += j.delta;
+              else if (j.text) full += j.text;
+            } catch (_) {}
+          }
+        }
+        placeholder.innerHTML = '';
+        placeholder.appendChild(renderMD(full || '…'));
+        document.getElementById('chatStream').scrollTop = stream.scrollHeight;
+      }
+    }
+    State.chatHistory.push({ role: 'assistant', content: full });
+  } catch (e) {
+    placeholder.innerHTML = '';
+    placeholder.appendChild(renderMD('错误: ' + e.message));
+  }
+}
+
+async function renderTaskDetail(id) {
+  renderChatHeader('任务 #' + id, '');
+  const stream = document.getElementById('chatStream');
+  clear(stream);
+  try {
+    const t = await api('/v1/tasks/' + encodeURIComponent(id));
+    const meta = el('div', { class: 'kv', style: { 'max-width': '720px', 'margin-bottom': '20px' } },
       el('div', { class: 'k' }, '标题'), el('div', null, t.title || t.prompt || ''),
       el('div', { class: 'k' }, '模式'), el('div', null, t.mode || '普通'),
       el('div', { class: 'k' }, '状态'), el('div', null, t.status || ''),
       el('div', { class: 'k' }, '创建于'), el('div', null, formatTs(t.created_at)),
-    ));
+    );
+    stream.appendChild(meta);
+
+    if (t.prompt) appendChatMsg(stream, 'user', t.prompt);
     if (t.result) {
-      body.appendChild(el('h3', null, '结果'));
-      body.appendChild(renderMD(typeof t.result === 'string' ? t.result : JSON.stringify(t.result, null, 2)));
+      const body = typeof t.result === 'string' ? t.result : '```json\n' + JSON.stringify(t.result, null, 2) + '\n```';
+      appendChatMsg(stream, 'gars', body);
     }
-  } catch (e) {}
+  } catch (e) {
+    stream.appendChild(el('div', { class: 'empty' }, '加载失败：' + e.message));
+  }
 }
 
-async function openNewTaskModal() {
+// ╔════════════════════════════════════════════╗
+// ║              composer setup                ║
+// ╚════════════════════════════════════════════╝
+function refreshComposerModes() {
+  const sel = document.getElementById('composerMode');
+  clear(sel);
+  for (const m of allModes()) {
+    sel.appendChild(el('option', { value: m.key, ...(m.key === State.composerMode ? { selected: true } : {}) }, m.label));
+  }
+  refreshComposerHint();
+}
+function refreshComposerHint() {
+  const m = findMode(State.composerMode);
+  const hint = document.getElementById('composerHint');
+  if (!m) { hint.textContent = ''; return; }
+  hint.textContent = m.runner_kind === 'chat'
+    ? ''
+    : '· 此模式发送后会弹窗确认参数';
+}
+
+// ╔════════════════════════════════════════════╗
+// ║              new task modal                ║
+// ╚════════════════════════════════════════════╝
+async function openNewTaskModal(presetMode, presetPrompt) {
   await loadModes();
   const content = el('div');
   content.appendChild(el('h3', null, '新建任务'));
+  content.appendChild(el('div', { class: 'modal-desc' }, '选择运行模式，填入参数后创建。'));
   content.appendChild(el('label', null, '模式'));
   const modeSel = el('select');
   for (const m of allModes()) {
-    modeSel.appendChild(el('option', { value: m.key }, m.label));
+    modeSel.appendChild(el('option', { value: m.key, ...(m.key === (presetMode || 'chat') ? { selected: true } : {}) }, m.label));
   }
   content.appendChild(modeSel);
-  const hint = el('div', { class: 'hint' }, modeDesc(findMode('chat') || allModes()[0]));
+  const hint = el('div', { class: 'hint' });
   content.appendChild(hint);
 
   const dyn = el('div');
@@ -545,93 +1024,97 @@ async function openNewTaskModal() {
 
   function refreshMode() {
     const m = findMode(modeSel.value);
-    hint.textContent = modeDesc(m);
+    hint.textContent = m ? (m.description || '') : '';
     clear(dyn);
     if (!m) return;
-    const runner = m.runner_kind;
-    if (runner === 'chat') {
+    const r = m.runner_kind;
+    if (r === 'chat') {
       dyn.appendChild(el('label', null, 'Prompt'));
       const ta = el('textarea', { id: 'np_prompt', rows: '4' });
-      if (m.prompt_template) ta.value = m.prompt_template;
+      if (presetPrompt) ta.value = presetPrompt;
       dyn.appendChild(ta);
-    } else if (runner === 'schedule') {
+    } else if (r === 'schedule') {
       dyn.appendChild(el('label', null, '标题'));
-      dyn.appendChild(el('input', { id: 'np_title', placeholder: '例如：每天早上摘要' }));
+      dyn.appendChild(el('input', { id: 'np_title', placeholder: '例：每天早上摘要' }));
       if (m.key === 'trigger') {
         dyn.appendChild(el('label', null, '触发条件 (LLM YES/NO prompt)'));
-        dyn.appendChild(el('textarea', { id: 'np_cond', placeholder: '例如：检查 ~/Downloads 是否有新 PDF' }));
+        const cond = el('textarea', { id: 'np_cond', placeholder: '例：检查 ~/Downloads 是否有新 PDF' });
+        if (presetPrompt) cond.value = presetPrompt;
+        dyn.appendChild(cond);
         dyn.appendChild(el('label', null, '检查间隔 (秒)'));
         dyn.appendChild(el('input', { id: 'np_interval', type: 'number', value: '60' }));
         dyn.appendChild(el('label', null, '触发动作 prompt'));
         dyn.appendChild(el('textarea', { id: 'np_action', placeholder: '条件满足时要执行的任务' }));
       } else {
         dyn.appendChild(el('label', null, '触发方式'));
-        const radios = el('div', { html:
+        dyn.appendChild(el('div', { html:
           '<label><input type="radio" name="schedAt" value="delay" checked/> N 分钟后</label>&nbsp;&nbsp;' +
           '<label><input type="radio" name="schedAt" value="time"/> 在某时刻</label>&nbsp;&nbsp;' +
-          '<label><input type="radio" name="schedAt" value="cron"/> Cron</label>'
-        });
-        dyn.appendChild(radios);
+          '<label><input type="radio" name="schedAt" value="cron"/> Cron</label>' }));
         dyn.appendChild(el('input', { id: 'np_sched_value', placeholder: '5  /  2026-05-17 09:00  /  0 9 * * *' }));
         dyn.appendChild(el('label', null, 'Prompt'));
-        dyn.appendChild(el('textarea', { id: 'np_prompt' }));
+        const ta = el('textarea', { id: 'np_prompt' });
+        if (presetPrompt) ta.value = presetPrompt;
+        dyn.appendChild(ta);
       }
-    } else if (runner === 'subagent') {
+    } else if (r === 'subagent') {
       dyn.appendChild(el('label', null, 'Agent 名'));
       dyn.appendChild(el('input', { id: 'np_agent', placeholder: 'verifier / explorer / reviewer' }));
       dyn.appendChild(el('label', null, '输入'));
-      dyn.appendChild(el('textarea', { id: 'np_input' }));
-    } else if (runner === 'plan') {
+      const ta = el('textarea', { id: 'np_input' });
+      if (presetPrompt) ta.value = presetPrompt;
+      dyn.appendChild(ta);
+    } else if (r === 'plan') {
       dyn.appendChild(el('label', null, '计划标题'));
       dyn.appendChild(el('input', { id: 'np_title' }));
       dyn.appendChild(el('label', null, '步骤 (每行一个)'));
-      dyn.appendChild(el('textarea', { id: 'np_steps', rows: '5' }));
-    } else if (runner === 'goal') {
+      const ta = el('textarea', { id: 'np_steps', rows: '5' });
+      if (presetPrompt) ta.value = presetPrompt;
+      dyn.appendChild(ta);
+    } else if (r === 'goal') {
       dyn.appendChild(el('label', null, '目标描述'));
-      dyn.appendChild(el('textarea', { id: 'np_goal' }));
+      const ta = el('textarea', { id: 'np_goal' });
+      if (presetPrompt) ta.value = presetPrompt;
+      dyn.appendChild(ta);
       dyn.appendChild(el('div', { class: 'row2' },
-        el('div', null,
-          el('label', null, '预算 (秒)'),
-          el('input', { id: 'np_budget', type: 'number', value: '600' })),
-        el('div', null,
-          el('label', null, '最大轮次'),
-          el('input', { id: 'np_turns', type: 'number', value: '20' }))));
+        el('div', null, el('label', null, '预算 (秒)'), el('input', { id: 'np_budget', type: 'number', value: '600' })),
+        el('div', null, el('label', null, '最大轮次'), el('input', { id: 'np_turns', type: 'number', value: '20' })),
+      ));
     }
   }
   modeSel.addEventListener('change', refreshMode);
   refreshMode();
 
-  const cancel = el('button', { onclick: () => content._close(null) }, '取消');
-  const submit = el('button', { class: 'primary', onclick: async () => {
-    const m = findMode(modeSel.value);
-    if (!m) return;
-    try {
-      await dispatchTask(m, dyn);
-      content._close('ok');
-      await refreshTasks();
-      renderTasksTab();
-      toast('已创建', 'ok');
-    } catch (e) {}
-  } }, '创建');
-  content.appendChild(el('div', { class: 'actions' }, cancel, submit));
+  content.appendChild(el('div', { class: 'actions' },
+    el('button', { class: 'btn', onclick: () => content._close(null) }, '取消'),
+    el('button', { class: 'btn primary', onclick: async () => {
+      const m = findMode(modeSel.value);
+      if (!m) return;
+      try {
+        await dispatchTask(m, dyn);
+        content._close('ok');
+        await refreshTasks();
+        renderTaskList();
+        toast('已创建', 'ok');
+      } catch (e) {}
+    } }, '创建'),
+  ));
   modal(content);
 }
 
 async function dispatchTask(mode, dyn) {
   const v = (id) => { const e = dyn.querySelector('#' + id); return e ? e.value : ''; };
-  const runner = mode.runner_kind;
-  if (runner === 'chat') {
+  const r = mode.runner_kind;
+  if (r === 'chat') {
     const p = v('np_prompt'); if (!p.trim()) throw new Error('empty');
     await api('/v1/tasks', { method: 'POST', body: { prompt: p, mode: mode.key } });
-  } else if (runner === 'schedule') {
+  } else if (r === 'schedule') {
     let prompt, title;
     if (mode.key === 'trigger') {
       const cond = v('np_cond'), interval = parseInt(v('np_interval')) || 60, action = v('np_action');
       title = v('np_title') || '触发任务';
       prompt = `# 触发器\n先回答（仅输出 YES 或 NO）：${cond}\n\n如果你输出 YES，则执行：${action}`;
-      await api('/v1/schedules', { method: 'POST', body: {
-        id: 't-' + Date.now(), title, prompt, every_secs: interval, mode: 'trigger',
-      }});
+      await api('/v1/schedules', { method: 'POST', body: { id: 't-' + Date.now(), title, prompt, every_secs: interval, mode: 'trigger' } });
     } else {
       title = v('np_title') || '定时任务';
       prompt = v('np_prompt');
@@ -643,217 +1126,258 @@ async function dispatchTask(mode, dyn) {
       else payload.delay_secs = parseInt(val) * 60;
       await api('/v1/schedules', { method: 'POST', body: payload });
     }
-  } else if (runner === 'subagent') {
+  } else if (r === 'subagent') {
     await api('/v1/subagents', { method: 'POST', body: { agent: v('np_agent'), input: v('np_input') } });
-  } else if (runner === 'plan') {
+  } else if (r === 'plan') {
     const steps = v('np_steps').split('\n').map(s => s.trim()).filter(Boolean).map(s => ({ title: s, status: 'pending' }));
     await api('/v1/plans', { method: 'POST', body: { title: v('np_title') || '新计划', steps } });
-  } else if (runner === 'goal') {
-    await api('/v1/goals', { method: 'POST', body: {
-      goal: v('np_goal'),
-      budget_seconds: parseInt(v('np_budget')) || 600,
-      max_turns: parseInt(v('np_turns')) || 20,
-    }});
+  } else if (r === 'goal') {
+    await api('/v1/goals', { method: 'POST', body: { goal: v('np_goal'), budget_seconds: parseInt(v('np_budget')) || 600, max_turns: parseInt(v('np_turns')) || 20 } });
   }
 }
 
-// =============== Skills tab ============
-function renderSkillsTab() {
-  const list = document.getElementById('listCol');
-  const det = document.getElementById('detailCol');
-  clear(list); clear(det);
-  // Mode chips
-  const switcher = el('div', { class: 'toolbar' },
-    el('button', {
-      class: State.skills.mode === 'local' ? '' : 'ghost',
-      onclick: () => { State.skills.mode = 'local'; renderSkillsTab(); }
-    }, '本地'),
-    el('button', {
-      class: State.skills.mode === 'market' ? '' : 'ghost',
-      onclick: () => { State.skills.mode = 'market'; renderSkillsTab(); }
-    }, '市场'),
+// ╔════════════════════════════════════════════╗
+// ║              settings                      ║
+// ╚════════════════════════════════════════════╝
+const SETTINGS_TABS = [
+  ['general', '通用'],
+  ['llm', 'LLM'],
+  ['modes', '模式管理'],
+  ['skills', '技能管理'],
+  ['connectors', '连接器'],
+  ['ext', '浏览器扩展'],
+  ['archive', '归档'],
+  ['about', '关于'],
+];
+
+function openSettings() {
+  State.settings.open = true;
+  document.getElementById('settingsBackdrop').classList.remove('hidden');
+  renderSettings();
+}
+function closeSettings() {
+  State.settings.open = false;
+  document.getElementById('settingsBackdrop').classList.add('hidden');
+}
+
+function renderSettings() {
+  const nav = document.getElementById('settingsNav');
+  clear(nav);
+  for (const [k, lbl] of SETTINGS_TABS) {
+    nav.appendChild(el('button', {
+      class: State.settings.sub === k ? 'active' : '',
+      onclick: () => { State.settings.sub = k; renderSettings(); },
+    }, lbl));
+  }
+  const c = document.getElementById('settingsContent');
+  clear(c);
+  const fn = {
+    general: renderSettingsGeneral,
+    llm: renderSettingsLLM,
+    modes: renderSettingsModes,
+    skills: renderSettingsSkills,
+    connectors: renderSettingsConnectors,
+    ext: renderSettingsExt,
+    archive: renderSettingsArchive,
+    about: renderSettingsAbout,
+  }[State.settings.sub] || renderSettingsAbout;
+  fn(c);
+}
+
+// ── TOML patch helpers ─────────────────────────
+async function readConfigText() {
+  const r = await api('/v1/config');
+  return (r && typeof r === 'object') ? (r.content || '') : String(r || '');
+}
+async function writeConfigText(text) {
+  await api('/v1/config', { method: 'PUT', body: { content: text } });
+}
+function quoteToml(s) {
+  return '"' + String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+}
+/** Surgically set `key = value` inside `[section]` (or `[section.sub]`).
+ *  Inserts the section + key if missing. Preserves comments / other keys. */
+function tomlSet(text, section, key, rawValue) {
+  const sectionLine = '[' + section + ']';
+  // Split into top-level + each section block
+  const lines = text.split('\n');
+  let inSection = false;
+  let sectionStart = -1, sectionEnd = lines.length;
+  for (let i = 0; i < lines.length; i++) {
+    const t = lines[i].trim();
+    if (t === sectionLine) { inSection = true; sectionStart = i; continue; }
+    if (inSection && /^\[[^\]]+\]\s*$/.test(t)) { sectionEnd = i; break; }
+  }
+  if (sectionStart < 0) {
+    // Append new section at end
+    const blk = (text.endsWith('\n') ? '' : '\n') + '\n' + sectionLine + '\n' + key + ' = ' + rawValue + '\n';
+    return text + blk;
+  }
+  const re = new RegExp('^(\\s*)' + key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*=.*$');
+  for (let i = sectionStart + 1; i < sectionEnd; i++) {
+    if (re.test(lines[i])) {
+      const m = lines[i].match(/^(\s*)/);
+      lines[i] = (m ? m[1] : '') + key + ' = ' + rawValue;
+      return lines.join('\n');
+    }
+  }
+  // Insert before sectionEnd (which is the next [section] or EOF)
+  let insertAt = sectionEnd;
+  while (insertAt > sectionStart + 1 && lines[insertAt - 1].trim() === '') insertAt--;
+  lines.splice(insertAt, 0, key + ' = ' + rawValue);
+  return lines.join('\n');
+}
+function tomlGet(text, section, key) {
+  const re = new RegExp('^\\[' + section.replace(/\./g, '\\.') + '\\]\\s*$', 'm');
+  const idx = text.search(re);
+  if (idx < 0) return null;
+  const after = text.slice(idx);
+  const nextSection = after.slice(1).search(/\n\[[^\]]+\]\s*$/m);
+  const block = nextSection > 0 ? after.slice(0, nextSection + 1) : after;
+  const keyRe = new RegExp('^\\s*' + key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*=\\s*(.+?)\\s*$', 'm');
+  const km = block.match(keyRe);
+  if (!km) return null;
+  let v = km[1].trim();
+  if (v.startsWith('"') && v.endsWith('"')) {
+    try { return JSON.parse(v); } catch (_) { return v.slice(1, -1); }
+  }
+  if (v === 'true' || v === 'false') return v === 'true';
+  if (/^-?\d+$/.test(v)) return parseInt(v, 10);
+  return v;
+}
+
+// ── Settings: General ──────────────────────────
+async function renderSettingsGeneral(c) {
+  c.appendChild(el('h3', null, '通用'));
+  c.appendChild(el('div', { class: 'section-desc' }, '服务监听地址、端口与 admin token。默认 admin token 为空（无需鉴权）；只有当你把端口暴露给其他主机时才需要设置。'));
+
+  let configText = '';
+  try { configText = await readConfigText(); }
+  catch (e) { c.appendChild(el('div', { class: 'empty' }, '加载配置失败：' + e.message)); return; }
+
+  const bind = tomlGet(configText, 'server', 'bind') || '127.0.0.1';
+  const port = tomlGet(configText, 'server', 'port') || 9221;
+  const adminTok = tomlGet(configText, 'server', 'admin_token') || '';
+
+  const bindIn = el('input', { value: bind });
+  const portIn = el('input', { type: 'number', value: port });
+  const tokIn = el('input', { type: 'password', value: adminTok, placeholder: '(空 = 不需要鉴权)' });
+  const tokShow = el('label', { class: 'toggle' },
+    el('input', { type: 'checkbox', onchange: (e) => { tokIn.type = e.target.checked ? 'text' : 'password'; } }),
+    el('span', { class: 'track' }),
+    el('span', { style: { 'font-size': '12px', color: 'var(--muted)' } }, '显示'),
   );
-  list.appendChild(switcher);
 
-  if (State.skills.mode === 'local') {
-    const q = el('input', { placeholder: '搜索 (英文更准) ...', value: State.skills.query });
-    q.addEventListener('keydown', async (ev) => {
-      if (ev.key === 'Enter') { State.skills.query = q.value; await loadLocalSkills(); renderSkillsTab(); }
-    });
-    list.appendChild(el('div', { class: 'toolbar' }, q,
-      el('button', { class: 'ghost', onclick: () => importByUrl() }, '导入')));
-    loadLocalSkills().then(() => renderLocalSkillList(list, det));
-  } else {
-    const q = el('input', { placeholder: '搜索 sophub ...', value: State.skills.query });
-    q.addEventListener('keydown', async (ev) => { if (ev.key === 'Enter') { State.skills.query = q.value; State.skills.marketPage = 1; loadMarket(list, det); } });
-    const sourceSel = el('select');
-    for (const [v, l] of [['', '全部来源'], ['official', '官方'], ['community', '用户投稿']]) {
-      sourceSel.appendChild(el('option', { value: v, ...(v === State.skills.marketSource ? { selected: 'selected' } : {}) }, l));
-    }
-    sourceSel.addEventListener('change', () => { State.skills.marketSource = sourceSel.value; State.skills.marketPage = 1; loadMarket(list, det); });
-    const levelSel = el('select');
-    for (const [v, l] of [['', '全部等级'], ['普通', '普通'], ['精良', '精良'], ['稀有', '稀有'], ['史诗', '史诗'], ['传说', '传说']]) {
-      levelSel.appendChild(el('option', { value: v, ...(v === State.skills.marketLevel ? { selected: 'selected' } : {}) }, l));
-    }
-    levelSel.addEventListener('change', () => { State.skills.marketLevel = levelSel.value; State.skills.marketPage = 1; loadMarket(list, det); });
-    list.appendChild(el('div', { class: 'toolbar' }, q, sourceSel, levelSel));
-    loadMarket(list, det);
-  }
-}
+  c.appendChild(el('div', { class: 'field' },
+    el('label', null, 'bind'),
+    el('div', { class: 'input-wrap' }, bindIn,
+      el('div', { class: 'hint' }, '通常保持 127.0.0.1。绑定 0.0.0.0 必须配 admin token。')),
+  ));
+  c.appendChild(el('div', { class: 'field' },
+    el('label', null, 'port'),
+    el('div', { class: 'input-wrap' }, portIn,
+      el('div', { class: 'hint' }, '默认 9221。改完需重启 gars 才会生效。')),
+  ));
+  c.appendChild(el('div', { class: 'field' },
+    el('label', null, 'admin token'),
+    el('div', { class: 'input-wrap' },
+      el('div', { style: { display: 'flex', gap: '8px', 'align-items': 'center' } }, tokIn, tokShow),
+      el('div', { class: 'hint' },
+        '空 = REST 不需要鉴权 ⓘ 推荐保持空值并保持 bind=127.0.0.1。',
+      ),
+      el('div', { style: { 'margin-top': '6px' } },
+        el('button', {
+          class: 'btn',
+          onclick: () => {
+            const t = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('');
+            tokIn.value = t;
+          },
+        }, '生成随机 token'),
+        ' ',
+        el('button', { class: 'btn', onclick: () => { tokIn.value = ''; } }, '清空'),
+      ),
+    ),
+  ));
 
-async function loadLocalSkills() {
-  try {
-    const q = State.skills.query;
-    const data = await api('/v1/skills' + (q ? '?q=' + encodeURIComponent(q) + '&k=30' : ''));
-    State.skills.items = data.hits || [];
-  } catch (e) { State.skills.items = []; }
-}
-function renderLocalSkillList(list, det) {
-  for (const hit of State.skills.items) {
-    const s = hit.skill || hit;
-    const item = el('button', {
-      class: 'item' + (State.skills.selectedKey === s.key ? ' selected' : ''),
-      onclick: () => { State.skills.selectedKey = s.key; renderSkillDetail(det, s.key); }
-    },
-      el('div', { class: 'ttl' }, s.name || s.key),
-      el('div', { class: 'meta' },
-        el('span', { class: 'chip' }, s.category || s.source || 'local'),
-        (hit.final_score ? el('span', { class: 'chip ok' }, hit.final_score.toFixed(2)) : null),
-        s.one_line_summary || ''),
-    );
-    list.appendChild(item);
-  }
-  if (!State.skills.items.length) list.appendChild(el('div', { class: 'empty' }, '没有命中。'));
-  if (State.skills.selectedKey) renderSkillDetail(det, State.skills.selectedKey);
-  else det.appendChild(el('div', { class: 'empty' }, '左侧选一条技能查看详情。'));
-}
-async function renderSkillDetail(det, key) {
-  clear(det);
-  det.appendChild(el('div', { class: 'hd' }, el('h2', null, key)));
-  const body = el('div', { class: 'body markdown' });
-  det.appendChild(body);
-  try {
-    const data = await api('/v1/skills/' + encodeURIComponent(key));
-    body.appendChild(renderMD(data.body || ''));
-  } catch (e) {
-    body.appendChild(el('div', { class: 'empty' }, '加载失败'));
-  }
-}
-async function importByUrl() {
-  const url = prompt('输入技能 markdown URL:');
-  if (!url) return;
-  try {
-    await api('/v1/skills/import', { method: 'POST', body: { url } });
-    toast('导入成功', 'ok');
-    await loadLocalSkills();
-    renderSkillsTab();
-  } catch (e) {}
+  c.appendChild(el('div', { class: 'actions-row' },
+    el('button', { class: 'btn primary', onclick: async () => {
+      try {
+        let txt = configText;
+        txt = tomlSet(txt, 'server', 'bind', quoteToml(bindIn.value.trim() || '127.0.0.1'));
+        txt = tomlSet(txt, 'server', 'port', String(parseInt(portIn.value, 10) || 9221));
+        txt = tomlSet(txt, 'server', 'admin_token', quoteToml(tokIn.value));
+        await writeConfigText(txt);
+        // sync token cache locally for future requests
+        setToken(tokIn.value.trim());
+        toast('已保存。端口/bind 改动需重启 gars。', 'ok');
+      } catch (e) {}
+    } }, '保存'),
+  ));
 }
 
-async function loadMarket(list, det) {
-  clear(det);
-  det.appendChild(el('div', { class: 'empty' }, '加载市场中…'));
-  try {
-    const q = new URLSearchParams();
-    if (State.skills.marketSource) q.set('source', State.skills.marketSource);
-    if (State.skills.marketLevel) q.set('level', State.skills.marketLevel);
-    if (State.skills.query) q.set('q', State.skills.query);
-    if (State.skills.marketPage > 1) q.set('page', State.skills.marketPage);
-    const data = await api('/v1/skills/market?' + q.toString());
-    // Re-render list (we already injected the toolbar above).
-    // Strip out non-toolbar children.
-    [...list.children].slice(1).forEach(c => c.remove());
-    for (const item of data.items || []) {
-      const card = el('button', {
-        class: 'item market-card' + (State.skills.marketSel === item.id ? ' selected' : ''),
-        onclick: () => { State.skills.marketSel = item.id; loadMarketDetail(det, item.id); }
-      },
-        el('div', { class: 'ttl' }, item.title),
-        el('div', { class: 'meta' },
-          el('span', { class: 'chip accent' }, item.level || ''),
-          el('span', { class: 'chip' }, item.source === 'official' ? '官方' : '社区'),
-          ` @${item.author} · ⭐ ${item.stars} · 💬 ${item.comments} · ${item.posted}`),
-        el('div', { class: 'preview' }, item.preview || ''),
-      );
-      list.appendChild(card);
-    }
-    // pagination
-    if ((data.pages || 1) > 1) {
-      const nav = el('div', { class: 'toolbar' });
-      if (data.page > 1) nav.appendChild(el('button', { class: 'ghost', onclick: () => { State.skills.marketPage = data.page - 1; loadMarket(list, det); } }, '« 上一页'));
-      nav.appendChild(el('span', { style: { padding: '0 8px', color: 'var(--muted)' } }, `第 ${data.page}/${data.pages} 页 · 共 ${data.total} 条`));
-      if (data.page < data.pages) nav.appendChild(el('button', { class: 'ghost', onclick: () => { State.skills.marketPage = data.page + 1; loadMarket(list, det); } }, '下一页 »'));
-      list.appendChild(nav);
-    }
-    clear(det);
-    det.appendChild(el('div', { class: 'empty' }, '左侧选一个技能。'));
-  } catch (e) {
-    clear(det);
-    det.appendChild(el('div', { class: 'empty' }, '市场加载失败：' + e.message));
-  }
+// ── Settings: LLM (raw TOML) ───────────────────
+async function renderSettingsLLM(c) {
+  c.appendChild(el('h3', null, 'LLM'));
+  c.appendChild(el('div', { class: 'section-desc' }, '编辑 config.toml 中的 default_llm 与 [[llm.sessions]] 段。保存后立即生效（已有运行中的任务保留旧 session）。'));
+  const wrap = el('div', { class: 'config-raw' });
+  const ta = el('textarea', { spellcheck: 'false' });
+  wrap.appendChild(ta);
+  c.appendChild(wrap);
+  c.appendChild(el('div', { class: 'actions-row' },
+    el('button', { class: 'btn primary', onclick: async () => {
+      try { await writeConfigText(ta.value); toast('已保存', 'ok'); }
+      catch (e) {}
+    } }, '保存'),
+    el('button', { class: 'btn', onclick: async () => {
+      try { ta.value = await readConfigText(); toast('已重载', 'ok'); }
+      catch (e) {}
+    } }, '重新读取'),
+  ));
+  try { ta.value = await readConfigText(); }
+  catch (e) { ta.value = '# 加载失败：' + e.message; }
 }
 
-async function loadMarketDetail(det, id) {
-  clear(det);
-  det.appendChild(el('div', { class: 'hd' },
-    el('h2', null, 'sophub: ' + id),
-    el('button', { class: 'primary', style: { 'margin-left': 'auto', padding: '4px 12px', background: 'var(--accent)', color: 'white', border: 0, 'border-radius': 'var(--radius)' },
-      onclick: async () => {
-        try {
-          const r = await api('/v1/skills/market/install', { method: 'POST', body: { id } });
-          toast('已安装到 ' + (r.path || '本地'), 'ok');
-          await loadLocalSkills();
-        } catch (e) {}
-      } }, '导入到本地')));
-  const body = el('div', { class: 'body markdown' });
-  det.appendChild(body);
-  body.appendChild(el('div', { class: 'empty' }, '加载中…'));
-  try {
-    const data = await api('/v1/skills/market/' + encodeURIComponent(id));
-    clear(body);
-    body.appendChild(renderMD(data.markdown || ''));
-  } catch (e) {
-    clear(body);
-    body.appendChild(el('div', { class: 'empty' }, '加载失败：' + e.message));
-  }
-}
-
-// =============== Modes tab ============
-async function renderModesTab() {
-  const list = document.getElementById('listCol');
-  const det = document.getElementById('detailCol');
-  clear(list); clear(det);
-  list.appendChild(el('div', { class: 'toolbar' },
-    el('button', { onclick: () => openCustomModeModal() }, '+ 自定义'),
-    el('span', { style: { flex: 1, color: 'var(--muted)', 'font-size': '11.5px', 'align-self': 'center', 'padding-left': '4px' } }, '存到 ~/.gars/modes/local/')));
+// ── Settings: Modes ────────────────────────────
+async function renderSettingsModes(c) {
+  c.appendChild(el('h3', null, '模式管理'));
+  c.appendChild(el('div', { class: 'section-desc' }, '模式 = SOP 组合 + 运行参数。builtin 模式只读；自定义模式存到 ~/.gars/modes/local/，保存后立即生效，无需重启。'));
 
   await loadModes(true);
+  const root = el('div', { class: 'entry-grid' });
+  const list = el('div', { class: 'entry-list' });
+  const detail = el('div', { class: 'entry-detail' });
+  root.appendChild(list); root.appendChild(detail);
+  c.appendChild(root);
+
+  list.appendChild(el('div', { class: 'toolbar' },
+    el('button', { onclick: () => openCustomModeModal() }, '＋ 自定义'),
+  ));
+
   const modes = allModes();
+  if (!State.settings.modesSel && modes.length) State.settings.modesSel = modes[0].key;
+
   for (const m of modes) {
-    const chip = m.source === 'builtin'
-      ? el('span', { class: 'chip' }, '内置')
-      : el('span', { class: 'chip warn' }, m.source || 'local');
     list.appendChild(el('button', {
-      class: 'item' + (State.modes.selectedKey === m.key ? ' selected' : ''),
-      onclick: () => { State.modes.selectedKey = m.key; renderModesTab(); }
+      class: 'entry-item' + (State.settings.modesSel === m.key ? ' selected' : ''),
+      onclick: () => { State.settings.modesSel = m.key; renderSettings(); },
     },
       el('div', { class: 'ttl' }, m.label),
-      el('div', { class: 'meta' }, chip, (m.description || '').slice(0, 36) + (m.description && m.description.length > 36 ? '…' : ''))));
+      el('div', { class: 'meta' },
+        m.source === 'builtin' ? el('span', { class: 'chip' }, '内置') : el('span', { class: 'chip warn' }, m.source || 'local'),
+        ' ', (m.description || '').slice(0, 40) + ((m.description || '').length > 40 ? '…' : '')),
+    ));
   }
+  if (!modes.length) list.appendChild(el('div', { class: 'empty' }, '没有任何模式。'));
 
-  const sel = findMode(State.modes.selectedKey) || modes[0];
-  if (!sel) {
-    det.appendChild(el('div', { class: 'empty' }, '没有任何模式（builtin 应该会自动刷出）。'));
-    return;
-  }
-  det.appendChild(el('div', { class: 'hd' }, el('h2', null, sel.label)));
-  const body = el('div', { class: 'body' });
-  det.appendChild(body);
-  body.appendChild(el('div', { class: 'kv' },
+  const sel = findMode(State.settings.modesSel);
+  if (!sel) { detail.appendChild(el('div', { class: 'empty' }, '左侧选择一个模式。')); return; }
+
+  detail.appendChild(el('h4', null, sel.label));
+  detail.appendChild(el('div', { class: 'kv' },
     el('div', { class: 'k' }, 'Key'), el('div', null, sel.key),
     el('div', { class: 'k' }, 'Runner'), el('div', null, sel.runner_kind || ''),
     el('div', { class: 'k' }, '来源'), el('div', null, sel.source || ''),
-    el('div', { class: 'k' }, '描述'), el('div', null, sel.description || ''),
+    el('div', { class: 'k' }, '描述'), el('div', null, sel.description || '—'),
     el('div', { class: 'k' }, 'SOP keys'), el('div', null, (sel.sop_keys || []).join(', ') || '—'),
     (sel.budget_secs != null ? el('div', { class: 'k' }, 'Budget') : null),
     (sel.budget_secs != null ? el('div', null, sel.budget_secs + ' s') : null),
@@ -861,17 +1385,18 @@ async function renderModesTab() {
     (sel.max_turns != null ? el('div', null, String(sel.max_turns)) : null),
   ));
   if (sel.source !== 'builtin') {
-    body.appendChild(el('button', {
-      style: { background: 'var(--danger)', color: 'white', border: 0, padding: '6px 14px', 'border-radius': 'var(--radius)', cursor: 'pointer', 'margin-top': '12px' },
+    detail.appendChild(el('button', {
+      class: 'btn danger', style: { 'margin-top': '12px' },
       onclick: async () => {
         try {
           await api('/v1/modes/' + encodeURIComponent(sel.key), { method: 'DELETE' });
-          State.modes.selectedKey = 'chat';
+          State.settings.modesSel = 'chat';
           await loadModes(true);
-          renderModesTab();
+          renderSettings();
+          refreshComposerModes();
           toast('已删除', 'ok');
         } catch (e) {}
-      }
+      },
     }, '删除模式'));
   }
 }
@@ -879,6 +1404,7 @@ async function renderModesTab() {
 function openCustomModeModal() {
   const content = el('div');
   content.appendChild(el('h3', null, '自定义模式'));
+  content.appendChild(el('div', { class: 'modal-desc' }, '保存到 ~/.gars/modes/local/<key>.toml。'));
   content.appendChild(el('label', null, 'Key (英文，唯一)'));
   const key = el('input', { placeholder: 'my_workflow' });
   content.appendChild(key);
@@ -892,78 +1418,295 @@ function openCustomModeModal() {
   content.appendChild(el('label', null, '描述'));
   const desc = el('input');
   content.appendChild(desc);
-  content.appendChild(el('label', null, 'sop_keys (英文逗号分隔，例：plan_sop)'));
-  const sops = el('input');
+  content.appendChild(el('label', null, 'sop_keys (英文逗号分隔)'));
+  const sops = el('input', { placeholder: 'plan_sop, autonomous' });
   content.appendChild(sops);
-  content.appendChild(el('label', null, 'budget_secs (可空)'));
-  const bud = el('input', { type: 'number' });
-  content.appendChild(bud);
+  content.appendChild(el('div', { class: 'row2' },
+    el('div', null, el('label', null, 'budget_secs (可空)'), el('input', { type: 'number', id: '_b' })),
+    el('div', null, el('label', null, 'max_turns (可空)'), el('input', { type: 'number', id: '_t' })),
+  ));
   content.appendChild(el('div', { class: 'actions' },
-    el('button', { onclick: () => content._close(null) }, '取消'),
-    el('button', { class: 'primary', onclick: async () => {
+    el('button', { class: 'btn', onclick: () => content._close(null) }, '取消'),
+    el('button', { class: 'btn primary', onclick: async () => {
       const k = key.value.trim(); if (!k) return toast('key 不能为空', 'err');
       const body = {
-        key: k,
-        label: lbl.value || k,
-        description: desc.value,
-        runner_kind: runner.value,
+        key: k, label: lbl.value || k,
+        description: desc.value, runner_kind: runner.value,
         sop_keys: sops.value.split(',').map(s => s.trim()).filter(Boolean),
         source: 'local',
       };
-      const b = parseInt(bud.value); if (!isNaN(b) && b > 0) body.budget_secs = b;
+      const b = parseInt(content.querySelector('#_b').value); if (!isNaN(b) && b > 0) body.budget_secs = b;
+      const t = parseInt(content.querySelector('#_t').value); if (!isNaN(t) && t > 0) body.max_turns = t;
       try {
         await api('/v1/modes', { method: 'POST', body });
         content._close('ok');
-        State.modes.selectedKey = k;
+        State.settings.modesSel = k;
         await loadModes(true);
-        renderModesTab();
+        renderSettings();
+        refreshComposerModes();
+        toast('已保存', 'ok');
       } catch (e) {}
-    } }, '保存')));
+    } }, '保存'),
+  ));
   modal(content);
 }
 
-// =============== Settings tab ==========
-function renderSettingsTab() {
-  const list = document.getElementById('listCol');
-  const det = document.getElementById('detailCol');
-  clear(list); clear(det);
-  list.appendChild(el('div', { class: 'subtabs' },
-    ...[['llm', 'LLM'], ['ext', 'Chrome 扩展'], ['conn', '聊天工具'], ['about', '关于']].map(([k, lbl]) =>
-      el('button', { class: State.settings.sub === k ? 'active' : '', onclick: () => { State.settings.sub = k; renderSettingsTab(); } }, lbl))));
-  if (State.settings.sub === 'llm') renderSettingsLLM(det);
-  else if (State.settings.sub === 'ext') renderSettingsExt(det);
-  else if (State.settings.sub === 'conn') renderSettingsConnectors(det);
-  else renderSettingsAbout(det);
-}
+// ── Settings: Skills ───────────────────────────
+async function renderSettingsSkills(c) {
+  c.appendChild(el('h3', null, '技能管理'));
+  c.appendChild(el('div', { class: 'section-desc' }, '本地 SOP 在 ~/.gars/skills/{builtin,local,imported}/。本地修改保存即生效；市场是 sophub 在线技能商城。'));
 
-async function renderSettingsLLM(det) {
-  det.appendChild(el('div', { class: 'hd' }, el('h2', null, 'LLM 设置 (config.toml)')));
-  const body = el('div', { class: 'body config-edit' });
-  det.appendChild(body);
-  const ta = el('textarea', { spellcheck: 'false' });
-  body.appendChild(ta);
-  const saveBtn = el('button', {
-    style: { background: 'var(--accent)', color: 'white', border: 0, padding: '8px 16px', 'border-radius': 'var(--radius)', cursor: 'pointer', 'margin-top': '8px' },
-    onclick: async () => {
-      try {
-        await api('/v1/config', { method: 'PUT', headers: { 'Content-Type': 'application/toml' }, body: ta.value });
-        toast('已保存。可能需要重启服务生效。', 'ok');
-      } catch (e) {}
+  // tab switch local / market
+  c.appendChild(el('div', { style: { display: 'flex', gap: '6px', margin: '6px 0 10px 0' } },
+    el('button', {
+      class: 'btn' + (State.settings.skills.mode === 'local' ? ' primary' : ''),
+      onclick: () => { State.settings.skills.mode = 'local'; renderSettings(); },
+    }, '本地'),
+    el('button', {
+      class: 'btn' + (State.settings.skills.mode === 'market' ? ' primary' : ''),
+      onclick: () => { State.settings.skills.mode = 'market'; renderSettings(); },
+    }, '市场'),
+  ));
+
+  const root = el('div', { class: 'entry-grid' });
+  const list = el('div', { class: 'entry-list' });
+  const detail = el('div', { class: 'entry-detail' });
+  root.appendChild(list); root.appendChild(detail);
+  c.appendChild(root);
+
+  if (State.settings.skills.mode === 'local') {
+    const q = el('input', { placeholder: '搜索 (英文更准)…', value: State.settings.skills.query });
+    q.addEventListener('keydown', async (ev) => {
+      if (ev.key === 'Enter') { State.settings.skills.query = q.value; await loadLocalSkills(); renderSettings(); }
+    });
+    list.appendChild(el('div', { class: 'toolbar' },
+      q,
+      el('button', { class: 'ghost', onclick: () => importByUrl() }, '导入'),
+    ));
+    await loadLocalSkills();
+    for (const hit of State.settings.skills.items) {
+      const s = hit.skill || hit;
+      list.appendChild(el('button', {
+        class: 'entry-item' + (State.settings.skills.selectedKey === s.key ? ' selected' : ''),
+        onclick: () => { State.settings.skills.selectedKey = s.key; renderSkillDetail(detail, s.key); },
+      },
+        el('div', { class: 'ttl' }, s.name || s.key),
+        el('div', { class: 'meta' },
+          el('span', { class: 'chip' }, s.category || s.source || 'local'),
+          (hit.final_score ? ' ' + hit.final_score.toFixed(2) : ''),
+          ' ',
+          s.one_line_summary || '',
+        ),
+      ));
     }
-  }, '保存');
-  body.appendChild(saveBtn);
-  try {
-    const r = await fetch('/v1/config', { headers: { 'Authorization': 'Bearer ' + getToken() } });
-    ta.value = await r.text();
-  } catch (e) { ta.value = '# 加载失败：' + e.message; }
+    if (!State.settings.skills.items.length) list.appendChild(el('div', { class: 'empty' }, '没有命中。'));
+    if (State.settings.skills.selectedKey) renderSkillDetail(detail, State.settings.skills.selectedKey);
+    else detail.appendChild(el('div', { class: 'empty' }, '左侧选一条技能查看详情。'));
+  } else {
+    // market
+    const q = el('input', { placeholder: '搜索 sophub…', value: State.settings.skills.query });
+    q.addEventListener('keydown', async (ev) => { if (ev.key === 'Enter') { State.settings.skills.query = q.value; State.settings.skills.marketPage = 1; loadMarket(list, detail); } });
+    const sourceSel = el('select');
+    for (const [v, l] of [['', '全部来源'], ['official', '官方'], ['community', '用户投稿']]) {
+      sourceSel.appendChild(el('option', { value: v, ...(v === State.settings.skills.marketSource ? { selected: true } : {}) }, l));
+    }
+    sourceSel.addEventListener('change', () => { State.settings.skills.marketSource = sourceSel.value; State.settings.skills.marketPage = 1; loadMarket(list, detail); });
+    const levelSel = el('select');
+    for (const [v, l] of [['', '全部等级'], ['普通', '普通'], ['精良', '精良'], ['稀有', '稀有'], ['史诗', '史诗'], ['传说', '传说']]) {
+      levelSel.appendChild(el('option', { value: v, ...(v === State.settings.skills.marketLevel ? { selected: true } : {}) }, l));
+    }
+    levelSel.addEventListener('change', () => { State.settings.skills.marketLevel = levelSel.value; State.settings.skills.marketPage = 1; loadMarket(list, detail); });
+    list.appendChild(el('div', { class: 'toolbar' }, q, sourceSel, levelSel));
+    loadMarket(list, detail);
+  }
 }
 
-async function renderSettingsExt(det) {
-  det.appendChild(el('div', { class: 'hd' }, el('h2', null, 'Chrome 扩展')));
-  const body = el('div', { class: 'body' });
-  det.appendChild(body);
+async function loadLocalSkills() {
+  try {
+    const q = State.settings.skills.query;
+    const data = await api('/v1/skills' + (q ? '?q=' + encodeURIComponent(q) + '&k=30' : ''));
+    State.settings.skills.items = data.hits || [];
+  } catch (e) { State.settings.skills.items = []; }
+}
+async function renderSkillDetail(host, key) {
+  clear(host);
+  host.appendChild(el('h4', null, key));
+  const body = el('div', { class: 'markdown' });
+  host.appendChild(body);
+  try {
+    const data = await api('/v1/skills/' + encodeURIComponent(key));
+    body.appendChild(renderMD(data.body || ''));
+  } catch (e) { host.appendChild(el('div', { class: 'empty' }, '加载失败')); }
+}
+async function importByUrl() {
+  const url = prompt('输入技能 markdown URL:');
+  if (!url) return;
+  try { await api('/v1/skills/import', { method: 'POST', body: { url } });
+    toast('导入成功', 'ok'); await loadLocalSkills(); renderSettings();
+  } catch (e) {}
+}
+async function loadMarket(list, detail) {
+  clear(detail); detail.appendChild(el('div', { class: 'empty' }, '加载市场中…'));
+  try {
+    const q = new URLSearchParams();
+    if (State.settings.skills.marketSource) q.set('source', State.settings.skills.marketSource);
+    if (State.settings.skills.marketLevel) q.set('level', State.settings.skills.marketLevel);
+    if (State.settings.skills.query) q.set('q', State.settings.skills.query);
+    if (State.settings.skills.marketPage > 1) q.set('page', State.settings.skills.marketPage);
+    const data = await api('/v1/skills/market?' + q.toString());
+    // strip non-toolbar items
+    [...list.children].slice(1).forEach(c => c.remove());
+    for (const item of data.items || []) {
+      list.appendChild(el('button', {
+        class: 'entry-item market-card' + (State.settings.skills.marketSel === item.id ? ' selected' : ''),
+        onclick: () => { State.settings.skills.marketSel = item.id; loadMarketDetail(detail, item.id); },
+      },
+        el('div', { class: 'ttl' }, item.title),
+        el('div', { class: 'meta' },
+          el('span', { class: 'chip accent' }, item.level || ''),
+          ' ',
+          el('span', { class: 'chip' }, item.source === 'official' ? '官方' : '社区'),
+          ` @${item.author || ''} · ⭐ ${item.stars || 0} · ${item.posted || ''}`),
+        el('div', { class: 'preview' }, item.preview || ''),
+      ));
+    }
+    if ((data.pages || 1) > 1) {
+      const nav = el('div', { class: 'toolbar' });
+      if (data.page > 1) nav.appendChild(el('button', { class: 'ghost', onclick: () => { State.settings.skills.marketPage = data.page - 1; loadMarket(list, detail); } }, '« 上'));
+      nav.appendChild(el('span', { style: { padding: '0 8px', color: 'var(--muted)' } }, `${data.page}/${data.pages}`));
+      if (data.page < data.pages) nav.appendChild(el('button', { class: 'ghost', onclick: () => { State.settings.skills.marketPage = data.page + 1; loadMarket(list, detail); } }, '下 »'));
+      list.appendChild(nav);
+    }
+    clear(detail);
+    detail.appendChild(el('div', { class: 'empty' }, '左侧选一个技能。'));
+  } catch (e) {
+    clear(detail); detail.appendChild(el('div', { class: 'empty' }, '加载失败：' + e.message));
+  }
+}
+async function loadMarketDetail(host, id) {
+  clear(host);
+  host.appendChild(el('h4', null, 'sophub: ' + id));
+  host.appendChild(el('button', { class: 'btn primary', onclick: async () => {
+    try { const r = await api('/v1/skills/market/install', { method: 'POST', body: { id } });
+      toast('已安装到 ' + (r.path || '本地'), 'ok'); await loadLocalSkills();
+    } catch (e) {}
+  } }, '导入到本地'));
+  const body = el('div', { class: 'markdown', style: { 'margin-top': '12px' } });
+  host.appendChild(body);
+  body.appendChild(el('div', { class: 'empty' }, '加载中…'));
+  try {
+    const data = await api('/v1/skills/market/' + encodeURIComponent(id));
+    clear(body); body.appendChild(renderMD(data.markdown || ''));
+  } catch (e) {
+    clear(body); body.appendChild(el('div', { class: 'empty' }, '加载失败：' + e.message));
+  }
+}
+
+// ── Settings: Connectors ───────────────────────
+async function renderSettingsConnectors(c) {
+  c.appendChild(el('h3', null, '连接器'));
+  c.appendChild(el('div', { class: 'section-desc' }, 'gars 只支持 Telegram 和 飞书/Lark。配置写入 config.toml 的 [connectors.*] 段，保存后通过「重载」让运行中的服务接管新配置。'));
+
+  let configText = '';
+  try { configText = await readConfigText(); } catch (e) {}
+
+  let states = [];
+  try { const data = await api('/v1/connectors'); states = data.connectors || data || []; }
+  catch (_) {}
+  const stateOf = (id) => states.find(s => s.id === id) || { id, status: 'unknown' };
+
+  // Telegram
+  c.appendChild(el('h4', null, 'Telegram'));
+  const tEnabled = tomlGet(configText, 'connectors.telegram', 'enable') === true;
+  const tToken = tomlGet(configText, 'connectors.telegram', 'token') || '';
+  const tChats = tomlGet(configText, 'connectors.telegram', 'allow_chats');
+  const tStatus = stateOf('telegram');
+
+  const tEnIn = el('input', { type: 'checkbox', ...(tEnabled ? { checked: true } : {}) });
+  const tTokIn = el('input', { type: 'password', value: tToken, placeholder: '或 export TG_BOT_TOKEN=...' });
+  const tChatsIn = el('input', { value: Array.isArray(tChats) ? tChats.join(', ') : '', placeholder: '逗号分隔；留空允许全部' });
+  c.appendChild(el('div', { class: 'field' },
+    el('label', null, '启用'),
+    el('div', { class: 'input-wrap' },
+      el('label', { class: 'toggle' }, tEnIn, el('span', { class: 'track' }),
+        el('span', { style: { 'font-size': '12px', color: 'var(--muted)' } }, '在 gars 启动后运行 Telegram 入口')),
+      el('div', { class: 'hint' }, '当前状态：',
+        el('span', { class: 'chip ' + (tStatus.status === 'running' ? 'ok' : 'warn') }, tStatus.status),
+        tStatus.last_error ? ' · ' + tStatus.last_error : ''),
+    ),
+  ));
+  c.appendChild(el('div', { class: 'field' }, el('label', null, 'bot token'),
+    el('div', { class: 'input-wrap' }, tTokIn, el('div', { class: 'hint' }, '空 = 从 TG_BOT_TOKEN 环境变量读取（推荐）。')),
+  ));
+  c.appendChild(el('div', { class: 'field' }, el('label', null, '允许的 chat_id'),
+    el('div', { class: 'input-wrap' }, tChatsIn, el('div', { class: 'hint' }, '逗号分隔。留空允许全部 chat。')),
+  ));
+
+  // Feishu
+  c.appendChild(el('h4', null, '飞书 / Lark'));
+  const fEnabled = tomlGet(configText, 'connectors.feishu', 'enable') === true;
+  const fAppId = tomlGet(configText, 'connectors.feishu', 'app_id') || '';
+  const fSecret = tomlGet(configText, 'connectors.feishu', 'app_secret') || '';
+  const fEncrypt = tomlGet(configText, 'connectors.feishu', 'encrypt_key') || '';
+  const fVerify = tomlGet(configText, 'connectors.feishu', 'verification_token') || '';
+  const fStatus = stateOf('feishu');
+
+  const fEnIn = el('input', { type: 'checkbox', ...(fEnabled ? { checked: true } : {}) });
+  const fAppIdIn = el('input', { value: fAppId });
+  const fSecretIn = el('input', { type: 'password', value: fSecret });
+  const fEncryptIn = el('input', { value: fEncrypt });
+  const fVerifyIn = el('input', { value: fVerify });
+  c.appendChild(el('div', { class: 'field' },
+    el('label', null, '启用'),
+    el('div', { class: 'input-wrap' },
+      el('label', { class: 'toggle' }, fEnIn, el('span', { class: 'track' }),
+        el('span', { style: { 'font-size': '12px', color: 'var(--muted)' } }, '运行飞书入口')),
+      el('div', { class: 'hint' }, '当前状态：',
+        el('span', { class: 'chip ' + (fStatus.status === 'running' ? 'ok' : 'warn') }, fStatus.status),
+        fStatus.last_error ? ' · ' + fStatus.last_error : ''),
+    ),
+  ));
+  c.appendChild(el('div', { class: 'field' }, el('label', null, 'app_id'), el('div', { class: 'input-wrap' }, fAppIdIn)));
+  c.appendChild(el('div', { class: 'field' }, el('label', null, 'app_secret'), el('div', { class: 'input-wrap' }, fSecretIn)));
+  c.appendChild(el('div', { class: 'field' }, el('label', null, 'encrypt_key'), el('div', { class: 'input-wrap' }, fEncryptIn, el('div', { class: 'hint' }, '若飞书后台开启加密，必填。'))));
+  c.appendChild(el('div', { class: 'field' }, el('label', null, 'verification_token'), el('div', { class: 'input-wrap' }, fVerifyIn)));
+
+  c.appendChild(el('div', { class: 'actions-row' },
+    el('button', { class: 'btn primary', onclick: async () => {
+      try {
+        let txt = configText;
+        // Telegram
+        txt = tomlSet(txt, 'connectors.telegram', 'enable', tEnIn.checked ? 'true' : 'false');
+        if (tTokIn.value) txt = tomlSet(txt, 'connectors.telegram', 'token', quoteToml(tTokIn.value));
+        if (tChatsIn.value.trim()) {
+          const arr = tChatsIn.value.split(',').map(s => s.trim()).filter(Boolean).map(quoteToml).join(', ');
+          txt = tomlSet(txt, 'connectors.telegram', 'allow_chats', '[' + arr + ']');
+        }
+        // Feishu
+        txt = tomlSet(txt, 'connectors.feishu', 'enable', fEnIn.checked ? 'true' : 'false');
+        if (fAppIdIn.value) txt = tomlSet(txt, 'connectors.feishu', 'app_id', quoteToml(fAppIdIn.value));
+        if (fSecretIn.value) txt = tomlSet(txt, 'connectors.feishu', 'app_secret', quoteToml(fSecretIn.value));
+        if (fEncryptIn.value) txt = tomlSet(txt, 'connectors.feishu', 'encrypt_key', quoteToml(fEncryptIn.value));
+        if (fVerifyIn.value) txt = tomlSet(txt, 'connectors.feishu', 'verification_token', quoteToml(fVerifyIn.value));
+        await writeConfigText(txt);
+        toast('已保存。点击「重载」让服务接管新配置。', 'ok');
+      } catch (e) {}
+    } }, '保存'),
+    el('button', { class: 'btn', onclick: async () => {
+      try { await api('/v1/connectors/telegram/reload', { method: 'POST' }); toast('Telegram reloaded', 'ok'); } catch (_) {}
+      try { await api('/v1/connectors/feishu/reload', { method: 'POST' }); toast('Feishu reloaded', 'ok'); } catch (_) {}
+      renderSettings();
+    } }, '重载'),
+  ));
+}
+
+// ── Settings: Extension ────────────────────────
+async function renderSettingsExt(c) {
+  c.appendChild(el('h3', null, '浏览器扩展'));
+  c.appendChild(el('div', { class: 'section-desc' }, '安装 Chrome MV3 扩展后，gars 可以驱动你现有的浏览器标签。'));
+
   const statusBox = el('div', { class: 'kv' });
-  body.appendChild(statusBox);
+  c.appendChild(statusBox);
   async function refreshExt() {
     clear(statusBox);
     try {
@@ -980,18 +1723,19 @@ async function renderSettingsExt(det) {
     }
   }
   refreshExt();
-  body.appendChild(el('h3', null, '安装步骤'));
-  body.appendChild(el('div', { html:
+
+  c.appendChild(el('h4', null, '安装步骤'));
+  c.appendChild(el('div', { html:
     '<ol>' +
     '<li><a href="/ext/download/gars-extension.zip" download>下载扩展包</a> 并解压到本地目录</li>' +
     '<li>访问 <code>chrome://extensions</code>，右上角打开 <b>开发者模式</b></li>' +
     '<li>点击 <b>加载已解压的扩展程序</b>，选中刚才的目录</li>' +
-    '<li>在扩展弹窗里粘贴本机 admin token (顶部输入框那个)，点击 <b>连接</b></li>' +
+    '<li>扩展弹窗里点 <b>连接</b>（若设置了 admin token 需要先粘贴）</li>' +
     '</ol>' }));
-  body.appendChild(el('button', {
-    style: { background: 'var(--accent)', color: 'white', border: 0, padding: '6px 14px', 'border-radius': 'var(--radius)', cursor: 'pointer' },
-    onclick: async () => {
+  c.appendChild(el('div', { class: 'actions-row' },
+    el('button', { class: 'btn', onclick: async () => {
       const start = Date.now();
+      toast('等待扩展连接 (60s)…', 'ok');
       while (Date.now() - start < 60000) {
         try {
           const s = await api('/v1/extension/state');
@@ -999,52 +1743,70 @@ async function renderSettingsExt(det) {
         } catch (_) {}
         await new Promise(r => setTimeout(r, 2000));
       }
-      toast('等待超时（60s）', 'err');
-    }
-  }, '等待扩展连接 (60s)'));
+      toast('等待超时 (60s)', 'err');
+    } }, '等待扩展连接 (60s)'),
+  ));
 }
 
-async function renderSettingsConnectors(det) {
-  det.appendChild(el('div', { class: 'hd' }, el('h2', null, '聊天工具 connectors')));
-  const body = el('div', { class: 'body' });
-  det.appendChild(body);
-  try {
-    const data = await api('/v1/connectors');
-    const items = data.connectors || data || [];
-    if (!items.length) body.appendChild(el('div', { class: 'empty' }, '没有 connector。在 config.toml 的 [connectors] 段配置。'));
-    for (const c of items) {
-      const card = el('div', { class: 'kv', style: { 'border-bottom': '1px solid var(--line)', padding: '10px 0' } },
-        el('div', { class: 'k' }, c.id || ''),
-        el('div', null,
-          el('span', { class: 'chip ' + (c.status === 'running' ? 'ok' : 'warn') }, c.status || 'unknown'),
-          el('span', { style: { 'margin-left': '8px', color: 'var(--muted)' } }, c.last_error || ''),
-        ),
-        el('div', { class: 'k' }, '操作'),
-        el('div', null,
-          el('button', { class: 'ghost', style: { padding: '4px 10px' },
-            onclick: async () => {
-              try { await api('/v1/connectors/' + c.id + '/reload', { method: 'POST' }); toast('已重载', 'ok'); renderSettingsConnectors(det); } catch (_) {}
-            } }, '重载')));
-      body.appendChild(card);
-    }
-  } catch (e) { body.appendChild(el('div', null, '加载失败：' + e.message)); }
+// ── Settings: Archive ──────────────────────────
+async function renderSettingsArchive(c) {
+  c.appendChild(el('h3', null, '归档'));
+  c.appendChild(el('div', { class: 'section-desc' }, '定期把旧会话从工作目录搬运到 L4 raw_sessions/ 并入库 SQLite。'));
+
+  let configText = '';
+  try { configText = await readConfigText(); } catch (e) {}
+  const auto = tomlGet(configText, 'archive', 'auto');
+  const idle = tomlGet(configText, 'archive', 'idle_secs') || 1800;
+  const autoIn = el('input', { type: 'checkbox', ...(auto !== false ? { checked: true } : {}) });
+  const idleIn = el('input', { type: 'number', value: idle });
+
+  c.appendChild(el('div', { class: 'field' },
+    el('label', null, '自动归档'),
+    el('div', { class: 'input-wrap' },
+      el('label', { class: 'toggle' }, autoIn, el('span', { class: 'track' }),
+        el('span', { style: { 'font-size': '12px', color: 'var(--muted)' } }, '开启后空闲时自动跑一次')),
+    ),
+  ));
+  c.appendChild(el('div', { class: 'field' },
+    el('label', null, '空闲间隔 (秒)'),
+    el('div', { class: 'input-wrap' }, idleIn,
+      el('div', { class: 'hint' }, '推荐 1800（30 分钟）。小于 60 的值会自动按 60 处理。')),
+  ));
+  c.appendChild(el('div', { class: 'actions-row' },
+    el('button', { class: 'btn primary', onclick: async () => {
+      try {
+        let txt = configText;
+        txt = tomlSet(txt, 'archive', 'auto', autoIn.checked ? 'true' : 'false');
+        txt = tomlSet(txt, 'archive', 'idle_secs', String(parseInt(idleIn.value, 10) || 1800));
+        await writeConfigText(txt);
+        toast('已保存。新设置在下一轮归档循环生效。', 'ok');
+      } catch (e) {}
+    } }, '保存'),
+    el('button', { class: 'btn', onclick: async () => {
+      try { const r = await api('/v1/archive/run', { method: 'POST' });
+        toast(`已运行：${(r.stats || []).length} 个会话处理。`, 'ok');
+      } catch (e) {}
+    } }, '立即运行一次'),
+  ));
 }
 
-async function renderSettingsAbout(det) {
-  det.appendChild(el('div', { class: 'hd' }, el('h2', null, '关于')));
-  const body = el('div', { class: 'body' });
-  det.appendChild(body);
+// ── Settings: About ────────────────────────────
+async function renderSettingsAbout(c) {
+  c.appendChild(el('h3', null, '关于'));
+  c.appendChild(el('div', { class: 'section-desc' }, 'gars — Rust 本机 Agent 服务，小核心 + 大 SOP。'));
+  const box = el('div', { class: 'kv' });
+  c.appendChild(box);
   try {
     const s = await api('/v1/status');
-    body.appendChild(el('div', { class: 'kv' },
-      el('div', { class: 'k' }, '版本'), el('div', null, s.version || '0.5.0'),
-      el('div', { class: 'k' }, '数据目录'), el('div', null, s.data_dir || ''),
-      el('div', { class: 'k' }, 'config'), el('div', null, s.config_path || ''),
-      el('div', { class: 'k' }, '运行端口'), el('div', null, (s.bind || '') + ':' + (s.port || '')),
-    ));
-  } catch (e) { body.appendChild(el('div', null, '加载失败：' + e.message)); }
-  body.appendChild(el('h3', null, '资源'));
-  body.appendChild(el('div', { html:
+    box.appendChild(el('div', { class: 'k' }, '版本')); box.appendChild(el('div', null, s.version || ''));
+    box.appendChild(el('div', { class: 'k' }, '数据目录')); box.appendChild(el('div', null, s.data_dir || ''));
+    box.appendChild(el('div', { class: 'k' }, 'config')); box.appendChild(el('div', null, s.config_path || ''));
+    box.appendChild(el('div', { class: 'k' }, '运行端口')); box.appendChild(el('div', null, (s.bind || '') + ':' + (s.port || '')));
+  } catch (e) {
+    box.appendChild(el('div', null, '加载失败：' + e.message));
+  }
+  c.appendChild(el('h4', null, '资源'));
+  c.appendChild(el('div', { html:
     '<ul>' +
     '<li><a href="https://github.com/uoox/gars" target="_blank">GitHub uoox/gars</a></li>' +
     '<li><a href="/health" target="_blank">/health</a></li>' +
@@ -1052,22 +1814,19 @@ async function renderSettingsAbout(det) {
     '</ul>' }));
 }
 
-// =============== utils =================
-function formatTs(ts) {
-  if (!ts) return '';
-  try {
-    const d = typeof ts === 'number' ? new Date(ts * (ts < 1e12 ? 1000 : 1)) : new Date(ts);
-    return d.toLocaleString();
-  } catch (_) { return String(ts); }
+// ╔════════════════════════════════════════════╗
+// ║              WS event bus                  ║
+// ╚════════════════════════════════════════════╝
+function setConnStatus(ok) {
+  const c = document.getElementById('connStatus');
+  c.classList.toggle('connected', ok);
+  c.querySelector('.lbl').textContent = ok ? '已连接' : '未连接';
 }
-
-// =============== WS bus ================
 function connectEvents() {
-  const token = getToken();
-  if (!token) return;
   try {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    const url = `${proto}://${location.host}/v1/events?token=${encodeURIComponent(token)}`;
+    const token = getToken();
+    const url = `${proto}://${location.host}/v1/events${token ? '?token=' + encodeURIComponent(token) : ''}`;
     const ws = new WebSocket(url);
     State.ws = ws;
     ws.onopen = () => setConnStatus(true);
@@ -1076,26 +1835,53 @@ function connectEvents() {
     ws.onmessage = (m) => {
       try {
         const ev = JSON.parse(m.data);
-        if (ev.topic && ev.topic.startsWith('task') && State.tab === 'tasks') {
-          refreshTasks().then(() => renderTasksTab());
+        if (ev.topic && ev.topic.startsWith('task')) {
+          refreshTasks().then(() => renderTaskList());
         }
       } catch (_) {}
     };
   } catch (_) {}
 }
-function setConnStatus(ok) {
-  const c = document.getElementById('connStatus');
-  c.classList.toggle('connected', ok);
-  c.querySelector('.lbl').textContent = ok ? '已连接' : '未连接';
-}
 
-// =============== bootstrap =============
-document.getElementById('tokenInput').addEventListener('change', () => { connectEvents(); switchTab(State.tab); });
-loadToken();
-switchTab('tasks');
-connectEvents();
-// quick GET /health (no auth) to confirm reachability
-fetch('/health').then(r => setConnStatus(r.ok && !!getToken())).catch(() => setConnStatus(false));
+// ╔════════════════════════════════════════════╗
+// ║              bootstrap                     ║
+// ╚════════════════════════════════════════════╝
+document.getElementById('settingsBtn').addEventListener('click', openSettings);
+document.getElementById('settingsClose').addEventListener('click', closeSettings);
+document.getElementById('settingsBackdrop').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('settingsBackdrop')) closeSettings();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && State.settings.open) closeSettings(); });
+
+document.getElementById('newTaskBtn').addEventListener('click', () => openNewTaskModal());
+document.getElementById('taskSearch').addEventListener('input', (e) => { State.taskFilter = e.target.value; renderTaskList(); });
+
+const composer = document.getElementById('composerInput');
+composer.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendComposerMessage(); }
+});
+composer.addEventListener('input', () => {
+  composer.style.height = 'auto';
+  composer.style.height = Math.min(200, composer.scrollHeight) + 'px';
+});
+document.getElementById('sendBtn').addEventListener('click', sendComposerMessage);
+document.getElementById('composerMode').addEventListener('change', (e) => {
+  State.composerMode = e.target.value;
+  refreshComposerHint();
+});
+
+async function bootstrap() {
+  // Probe /health (always public)
+  try { await fetch('/health').then(r => r.ok); } catch (_) {}
+
+  await loadModes(true);
+  refreshComposerModes();
+  await refreshTasks();
+  renderTaskList();
+  renderChatPane();
+  connectEvents();
+}
+bootstrap();
 </script>
 </body>
 </html>

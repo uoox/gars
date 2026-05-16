@@ -656,7 +656,7 @@ dependencies = [
 
 [[package]]
 name = "gars-archive"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -674,7 +674,7 @@ dependencies = [
 
 [[package]]
 name = "gars-cdp"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "futures-util",
@@ -688,7 +688,7 @@ dependencies = [
 
 [[package]]
 name = "gars-cli"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -712,12 +712,11 @@ dependencies = [
  "toml",
  "tracing",
  "tracing-subscriber",
- "uuid",
 ]
 
 [[package]]
 name = "gars-connectors"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -743,7 +742,7 @@ dependencies = [
 
 [[package]]
 name = "gars-core"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -759,7 +758,7 @@ dependencies = [
 
 [[package]]
 name = "gars-extension"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -774,7 +773,7 @@ dependencies = [
 
 [[package]]
 name = "gars-llm"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -792,7 +791,7 @@ dependencies = [
 
 [[package]]
 name = "gars-memory"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -801,12 +800,11 @@ dependencies = [
  "serde_json",
  "tempfile",
  "toml",
- "uuid",
 ]
 
 [[package]]
 name = "gars-osctl"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "base64",
@@ -824,7 +822,7 @@ dependencies = [
 
 [[package]]
 name = "gars-server"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -858,7 +856,7 @@ dependencies = [
 
 [[package]]
 name = "gars-skills"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -879,7 +877,7 @@ dependencies = [
 
 [[package]]
 name = "gars-store"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -892,7 +890,7 @@ dependencies = [
 
 [[package]]
 name = "gars-tools"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -917,7 +915,7 @@ dependencies = [
 
 [[package]]
 name = "gars-vision"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "async-trait",

@@ -12,7 +12,6 @@ use gars_memory::{GarsPaths, default_config, legacy_home, migration_hint};
 use gars_osctl::Keychain;
 use reqwest::header::AUTHORIZATION;
 use serde_json::Value;
-use uuid::Uuid;
 
 /// macOS LaunchAgent label. v0.10 renamed from `cc.uoox.gars` to a proper
 /// reverse-DNS string matching the GitHub source URL. Linux uses
@@ -347,15 +346,12 @@ fn configure(paths: &GarsPaths) -> Result<()> {
         .with_prompt("聊天平台配置备注/chat connector note")
         .default("configure Telegram / Feishu connectors here later".into())
         .interact_text()?;
+    // v0.0.2: default is no auth. Set a token only if you bind to a non-
+    // loopback address or expose 127.0.0.1 off-box. Empty = unauthenticated.
     let admin_token = Password::with_theme(&theme)
-        .with_prompt("REST admin token (empty to generate)")
+        .with_prompt("REST admin token (留空 = 不需要鉴权，推荐保持默认)")
         .allow_empty_password(true)
         .interact()?;
-    let admin_token = if admin_token.trim().is_empty() {
-        Uuid::new_v4().to_string()
-    } else {
-        admin_token
-    };
 
     let mut extras = String::new();
     if preset.fake_cc {

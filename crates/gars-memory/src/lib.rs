@@ -7,7 +7,6 @@ use anyhow::{Context, Result};
 use chrono::Local;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use uuid::Uuid;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct GarsPaths {
@@ -123,7 +122,11 @@ pub fn migration_hint(paths: &GarsPaths) -> Option<String> {
 }
 
 pub fn default_config() -> String {
-    DEFAULT_CONFIG_TEMPLATE.replace("__ADMIN_TOKEN__", &Uuid::new_v4().to_string())
+    // admin_token defaults to empty: REST is unauthenticated out of the box.
+    // Users who expose 127.0.0.1 to other hosts (or run behind a tunnel)
+    // should set a token via the Web UI → 设置 → 通用 (or by editing
+    // config.toml directly).
+    DEFAULT_CONFIG_TEMPLATE.replace("__ADMIN_TOKEN__", "")
 }
 
 fn write_if_missing(path: &Path, content: &str) -> Result<()> {
@@ -207,6 +210,9 @@ context_char_budget = 180000
 [server]
 bind = "127.0.0.1"
 port = 9221
+# Empty admin_token = REST is unauthenticated (default since v0.0.2).
+# Listening on 127.0.0.1 is the safety net; set a real token here if
+# you bind to 0.0.0.0 or tunnel/forward the port off-box.
 admin_token = "__ADMIN_TOKEN__"
 
 [browser]
